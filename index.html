@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2027广东省考备考日历 · 月周日计划</title>
+<style>
+:root{
+  --bg:#f4f7f4; --panel:#ffffff; --card:#ffffff;
+  --primary:#2f7d5f; --primary-2:#3a9d7f; --ink:#2b3a34; --muted:#7a8a83; --line:#e2e8e4;
+  --c-mo:#7a93a6; --c-ji:#2f7d5f; --c-qiang:#d98e2b; --c-chong:#c05b4d; --c-exam:#a3362f;
+  --shadow:0 1px 3px rgba(40,70,60,.08), 0 6px 24px rgba(40,70,60,.06);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;padding-bottom:60px}
+button{font-family:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+
+/* ---------- header ---------- */
+header{background:linear-gradient(135deg,#2f7d5f 0%,#3a9d7f 60%,#2f8f86 100%);color:#fff;padding:22px 0 26px}
+.hd-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hd-title h1{font-size:20px;font-weight:700;letter-spacing:.5px}
+.hd-title p{font-size:13px;opacity:.9;margin-top:4px}
+.hd-count{text-align:right}
+.hd-count .days{font-size:34px;font-weight:800;line-height:1}
+.hd-count .sub{font-size:12px;opacity:.9;margin-top:2px}
+.hd-count .clock{font-size:12px;opacity:.95;font-family:ui-monospace,Consolas,monospace;margin-top:3px}
+.exam-row{margin-top:14px;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.exam-row label{opacity:.92}
+.exam-row input[type=date]{border:none;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--ink);outline:none}
+.exam-note{opacity:.82;font-size:12px}
+
+/* ---------- stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 4px}
+.stat{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-size:22px;font-weight:800;margin-top:4px}
+.stat .v small{font-size:12px;font-weight:500;color:var(--muted)}
+.bar{height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;background:var(--primary);border-radius:6px;transition:width .3s}
+.stat .pct{font-size:11px;color:var(--muted);margin-top:4px}
+
+.phase-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 2px}
+.ph{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:11px 13px;border-left:5px solid var(--line)}
+.ph .t{font-size:12px;font-weight:700}
+.ph .d{font-size:11px;color:var(--muted);margin:2px 0 6px}
+.ph .bar{height:6px}
+.ph .bar>i{background:var(--phc,#2f7d5f)}
+.ph .pct{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ---------- toolbar ---------- */
+.toolbar{position:sticky;top:0;z-index:20;background:rgba(244,247,244,.92);backdrop-filter:blur(8px);padding:12px 0;margin-top:6px}
+.toolbar .inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.seg{display:inline-flex;background:#e7ece7;border-radius:10px;padding:3px}
+.seg button{border:none;background:transparent;padding:7px 16px;font-size:14px;color:var(--muted);border-radius:8px;cursor:pointer;font-weight:600}
+.seg button.on{background:#fff;color:var(--primary);box-shadow:var(--shadow)}
+.nav{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.nav button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px}
+.nav .lbl{font-size:14px;font-weight:700;min-width:120px;text-align:center}
+.today-btn{border:1px solid var(--line);background:#fff;color:var(--primary);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;font-weight:600}
+.reset-btn{border:none;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline}
+
+/* ---------- views ---------- */
+.view{margin-top:8px}
+
+/* month */
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px}
+.cal-head div{text-align:center;font-size:12px;color:var(--muted);font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{background:var(--card);border-radius:10px;min-height:96px;padding:7px 8px;cursor:pointer;border:1px solid transparent;box-shadow:var(--shadow);position:relative;transition:.15s}
+.day:hover{border-color:var(--primary-2)}
+.day.out{opacity:.35}
+.day.today{outline:2px solid var(--primary-2)}
+.day.exam{background:var(--c-exam);color:#fff}
+.day.exam .num,.day.exam .dot{color:#fff}
+.day .num{font-size:12px;font-weight:700;color:var(--muted)}
+.day .tag{font-size:10px;font-weight:700;margin:3px 0 2px;padding:1px 5px;border-radius:5px;display:inline-block;color:#fff}
+.day .brief{font-size:10.5px;color:var(--muted);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.day .done{position:absolute;right:7px;bottom:6px;font-size:10px;color:var(--primary);font-weight:700}
+.day.exam .done{color:#fff}
+
+/* week */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.wday{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:10px;min-height:200px;cursor:pointer;border:1px solid transparent}
+.wday:hover{border-color:var(--primary-2)}
+.wday.today{outline:2px solid var(--primary-2)}
+.wday.exam{background:var(--c-exam);color:#fff}
+.wday .top{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
+.wday .top b{font-size:15px;color:var(--ink)}
+.wday.exam .top b,.wday.exam .top{color:#fff}
+.wday .tlist{list-style:none;margin-top:8px}
+.wday .tlist li{font-size:11px;display:flex;gap:5px;align-items:flex-start;padding:4px 0;border-bottom:1px dashed var(--line)}
+.wday .tlist li:last-child{border:none}
+.wday .tlist input{margin-top:2px;accent-color:var(--primary)}
+.wday .tlist .done-txt{text-decoration:line-through;color:var(--muted)}
+.wday .tlist .tm{color:var(--muted);font-size:10px;white-space:nowrap}
+
+/* day */
+.day-panel{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:18px;margin-top:8px}
+.day-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px}
+.day-head h2{font-size:18px}
+.day-head .meta{font-size:12px;color:var(--muted)}
+.day-note{background:#eef4ef;border-left:4px solid var(--primary);padding:9px 12px;border-radius:8px;font-size:12.5px;color:#3c5a4c;margin:10px 0 14px}
+.task-list{list-style:none}
+.task{display:flex;gap:10px;align-items:flex-start;padding:11px 8px;border-bottom:1px solid var(--line)}
+.task:last-child{border:none}
+.task input{width:18px;height:18px;margin-top:1px;accent-color:var(--primary);cursor:pointer;flex:0 0 auto}
+.task .body{flex:1}
+.task .tt{font-size:14px}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.task .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.task .tm{font-size:11px;color:var(--muted);background:#f0f3ef;padding:1px 7px;border-radius:6px;white-space:nowrap;margin-left:8px}
+.task .mod{font-size:10px;font-weight:700;color:#fff;padding:1px 6px;border-radius:5px;white-space:nowrap}
+
+.mod-资料{background:#2f7d5f}.mod-判断{background:#3971b8}.mod-言语{background:#7b5cb8}.mod-数量{background:#c0782b}.mod-政理常识{background:#c05b4d}.mod-申论{background:#2f8f86}.mod-复盘{background:#8a8f9a}.mod-综合{background:#55646d}.mod-自测{background:#a3362f}
+
+/* module stats */
+.mod-stats{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:16px;margin-top:12px}
+.mod-stats h3{font-size:14px;margin-bottom:12px}
+.mod-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.mod-row .name{width:64px;font-size:12px;color:var(--ink);font-weight:600;flex:0 0 auto}
+.mod-row .bar{flex:1;margin:0}
+.mod-row .num{width:88px;font-size:11px;color:var(--muted);text-align:right;flex:0 0 auto}
+
+footer{margin-top:22px;text-align:center;font-size:11px;color:var(--muted)}
+footer a{color:var(--primary)}
+
+/* responsive */
+@media(max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .phase-strip{grid-template-columns:repeat(2,1fr)}
+  .week-grid{grid-template-columns:repeat(2,1fr)}
+  .cal-grid{gap:4px}
+  .day{min-height:66px;padding:5px 5px}
+  .day .brief{display:none}
+  .day .tag{font-size:9px;margin:2px 0 0}
+  .nav .lbl{min-width:96px}
+}
+@media(max-width:460px){
+  .hd-count .days{font-size:26px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .week-grid{grid-template-columns:1fr}
+  .seg button{padding:7px 11px;font-size:13px}
+}
+
+/* ---------- 日视图：进度条 + 时间表 ---------- */
+.day-prog-wrap{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+.day-prog{flex:1;margin:0;height:10px}
+.day-prog-txt{font-size:12px;font-weight:800;color:var(--primary);white-space:nowrap}
+.sched-title{font-size:13px;font-weight:800;margin:14px 0 8px;color:var(--ink)}
+.sched{display:flex;flex-direction:column;gap:7px}
+.sched-block{display:flex;gap:12px;align-items:stretch}
+.sched-block.rest{opacity:.95}
+.sb-time{width:96px;flex:0 0 auto;text-align:right;font-size:12px;font-weight:800;color:var(--primary);padding-top:9px;font-family:ui-monospace,Consolas,monospace;line-height:1.3}
+.sched-block.rest .sb-time{color:var(--muted)}
+.sb-body{flex:1;min-width:0}
+.sb-name{font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:3px}
+.rest-hint{color:var(--muted);font-size:12px;padding:7px 8px;font-style:italic}
+
+/* ---------- 单元格进度条 ---------- */
+.day-bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:5px}
+.day-bar>i{display:block;height:100%}
+.wday-bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:9px}
+.wday-bar>i{display:block;height:100%}
+
+@media(max-width:760px){
+  .sched-block{flex-direction:column;gap:2px}
+  .sb-time{width:auto;text-align:left;padding-top:0}
+  .sb-name{margin-top:4px}
+}
+.plan-note{margin:10px auto 0;max-width:1100px;background:#f3f7f1;border:1px solid #d8e6d2;border-radius:10px;padding:8px 14px;font-size:13px;color:#3a4a3f;line-height:1.7}
+.plan-note summary{cursor:pointer;font-weight:600;color:#2f7d5f;padding:2px 0}
+.plan-note ul{margin:6px 0 2px;padding-left:20px}
+.plan-note li{margin:3px 0}
+.plan-note b{color:#1f5c43}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hd-top">
+      <div class="hd-title">
+        <h1>📚 2027 广东省考备考日历</h1>
+        <p>月 · 周 · 日 三层任务 | 打卡统计 | 暂定笔试日可调</p>
+      </div>
+      <div class="hd-count">
+        <div class="days" id="countDays">--</div>
+        <div class="sub">距离笔试（暂定）</div>
+        <div class="clock" id="countClock">--:--:--</div>
+      </div>
+    </div>
+    <div class="exam-row">
+      <label for="examDate">📅 目标考试日（暂定）：</label>
+      <input type="date" id="examDate" value="2026-12-07">
+      <span class="exam-note">可随时调整，计划会弹性适配；建议以 10 月官方公告为准</span>
+    </div>
+    <details class="plan-note" open>
+      <summary>📌 计划前提与修订说明（点开/收起）</summary>
+      <ul>
+        <li><b>身份前提</b>：日模板按 <b>全职备考 约 7.5 小时/日（周一至周六，每天有效学习 7–8 小时）</b> 设计；<b>每周日下午固定半天休息</b>（日历中已标注「休息半天」任务），不排任务，保证可持续。</li>
+        <li><b>科学推理</b>：判断推理含科学推理（广东特色约 10 题），<b>题本03 无此章</b>，统一用「粉笔 App」刷题——每天 1 个任务 + 冲刺期保温（已在 12 天排实体刷题）。</li>
+        <li><b>题量口径</b>：50 题/日为<b>上限指引</b>；每周页码按 ≈250 题反推封顶，<b>超额页标「选做」</b>（07 特殊题型/篇章阅读、03 创新题型、05 综合训练），必做基础篇不动。</li>
+        <li><b>缓冲机制</b>：每 4 周一个半周缓冲日（<b>9/20、10/18、11/15</b>）；累计落后 &gt;3 天先砍「选做」页与高难进阶，不动必做基础篇。</li>
+        <li><b>冲刺模考</b>：每周整套限时 <b>≤2 次</b>（周三行测 + 周六申论），复盘时长硬性 <b>≥ 考试时长</b>（行测 90min / 申论 150min）。</li>
+        <li><b>公告报名</b>：10/20–24 公告报名周已预留半天选岗（10/19 任务）；基础大测前移避开公告发布日。</li>
+        <li><b>申论闭环</b>：采用「<b>找人互批</b>」——每周日与考友交换批改，无外部批改渠道时改对照答案自批。</li>
+      </ul>
+    </details>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 进度统计 -->
+  <div class="stats">
+    <div class="stat">
+      <div class="k">整体完成度</div>
+      <div class="v" id="statOverall">0<small>%</small></div>
+      <div class="bar"><i id="barOverall" style="width:0%"></i></div>
+      <div class="pct" id="statOverallNum">已完成 0 / 0 项</div>
+    </div>
+    <div class="stat">
+      <div class="k">已打卡天数</div>
+      <div class="v" id="statDays">0<small> 天</small></div>
+      <div class="bar"><i id="barDays" style="width:0%"></i></div>
+      <div class="pct" id="statStreak">连续打卡 0 天</div>
+    </div>
+    <div class="stat">
+      <div class="k">今日任务</div>
+      <div class="v" id="statToday">0<small> 项</small></div>
+      <div class="bar"><i id="barToday" style="width:0%"></i></div>
+      <div class="pct" id="statTodayNum">已完成 0 / 0</div>
+    </div>
+    <div class="stat">
+      <div class="k">剩余备考天数</div>
+      <div class="v" id="statRemain">0<small> 天</small></div>
+      <div class="bar"><i style="width:100%;background:#8aa0b0"></i></div>
+      <div class="pct" id="statPhase">当前阶段：—</div>
+    </div>
+  </div>
+
+  <div class="phase-strip" id="phaseStrip"></div>
+
+  <!-- 视图切换 -->
+  <div class="toolbar">
+    <div class="inner">
+      <div class="seg">
+        <button data-view="month" class="on">月</button>
+        <button data-view="week">周</button>
+        <button data-view="day">日</button>
+      </div>
+      <div class="nav">
+        <button id="prevBtn">‹</button>
+        <span class="lbl" id="navLbl">2026年8月</span>
+        <button id="nextBtn">›</button>
+      </div>
+      <button class="today-btn" id="todayBtn">回到今天</button>
+      <button class="reset-btn" id="resetBtn">重置打卡</button>
+      <span id="syncStatus" style="display:inline-block;font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;background:#eef0f5;color:#7a8a83">同步中</span>
+    </div>
+  </div>
+
+  <div class="view" id="viewContainer"></div>
+
+  <!-- 模块统计 -->
+  <div class="mod-stats">
+    <h3>分模块进度</h3>
+    <div id="modStats"></div>
+  </div>
+
+  <footer>
+    计划生成自「2027广东省考备考规划」与「执行手册」· 任务为模板，可按需勾选调整 · 数据云端同步（Supabase）· 离线时保存在本机浏览器
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+/* ================= 数据模型：章节/页码指向全部明确 ================= */
+const START = new Date(2026, 7, 25);   // 2026-08-25（明天直接开始，无摸底）
+let EXAM = new Date(2026, 11, 7);      // 暂定 2026-12-07，可在顶部修改
+const MON0 = new Date(2026, 7, 24);    // 第一个周一 2026-08-24
+
+const PHASES = [
+  {id:0, name:"系统基础", range:"8/25–10/17", color:"#2f7d5f"},
+  {id:1, name:"强化刷题", range:"10/18–11/14", color:"#d98e2b"},
+  {id:2, name:"冲刺模考", range:"11/15–12/7", color:"#c05b4d"},
+];
+
+/* 每个日期对应的完整任务（已按视频→教材页码→题本页码→申论→复盘定位） */
+const TASKS_BY_DATE = {
+  "2026-08-25": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料1《统计术语+阅读方法》（02:23:44，1.25–1.5倍速）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p181-197 统计术语+阅读方法，例题重做", "mod": "综合"}, {"label": "题本09 基础篇 p1-8 简单计算（直接读数/加减/尾数法）", "mod": "资料"}, {"label": "申论学习：申论视频：申论1-1/1-2《申论基础+广东考情》（02:22:00）+ 精读《申论的规矩·上册》p1-31", "mod": "申论"}, {"label": "申论动笔：整理申论基础笔记：答题要素/答题步骤", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-08-26": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料2《计算技巧》（02:09:00）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p198-224 计算技巧+应试策略，例题重做", "mod": "综合"}, {"label": "题本09 基础篇 p9-27 基期与现期（基期量/现期量/基期和差）", "mod": "资料"}, {"label": "申论学习：精读《申论的规矩·上册》p32-48 广东省考申论考情", "mod": "申论"}, {"label": "申论动笔：对照近3年广东申论真题，列出题型分布表", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-08-27": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料3《简单计算+基期现期巩固》（02:06:00）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p225-241 重点强化：简单计算+基期与现期", "mod": "综合"}, {"label": "题本09 基础篇 p28-59 增长率（一般/比较/间隔/年均/混合）", "mod": "资料"}, {"label": "申论学习：申论视频：申论2-1/2-2《单一题·问题类》（02:16:37）+ 精读 p49-67", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·问题类 1道（限时20min+对照精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-08-28": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料4《一般增长率》（02:01:00）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p242-249 一般增长率", "mod": "综合"}, {"label": "题本09 基础篇 p60-69 增长量（计算+比较）", "mod": "资料"}, {"label": "申论学习：复习《申论的规矩·上册》p49-67 问题类", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·问题类 1道（用不同材料再练）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-08-29": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料5《增长量+倍数》（02:35:00）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p250-261 增长量+倍数", "mod": "综合"}, {"label": "题本09 基础篇 p70-74 增长量收尾（倍数见提升篇）", "mod": "资料"}, {"label": "申论学习：申论视频：申论3-1/3-2《单一题·影响类》（02:15:00）+ 精读 p68-88", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·影响类 1道（限时20min+精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-08-30": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料6《比重》（02:27:00）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p262-271 比重（现期/基期/两期）", "mod": "综合"}, {"label": "题本09 基础篇 p75-106 比重（无重叠，接 p70-74）", "mod": "资料"}, {"label": "申论学习：复习《申论的规矩·上册》p68-88 影响类", "mod": "申论"}, {"label": "申论动笔：整理单一题问题/影响类答题模板", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-08-31": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料7《平均数+特殊增长率》（02:49:00）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p272-292 平均数+特殊增长率", "mod": "综合"}, {"label": "题本09 提升篇 p107-131 倍数+平均数", "mod": "资料"}, {"label": "申论学习：申论视频：申论4《单一题·原因类》（02:44:00）+ 精读 p89-118", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·原因类 1道（限时20min+精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-01": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "行测视频：资料8《综合分析+应试策略》（02:25:44）", "mod": "资料"}, {"label": "精读《行测的思维·数量关系与资料分析》p293-298 综合分析+应试策略", "mod": "综合"}, {"label": "题本09 提升篇 p132-162 综合分析", "mod": "资料"}, {"label": "申论学习：复习《申论的规矩·上册》p89-118 原因类", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·原因类 1道（二刷）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-02": [{"label": "早读：资料分析公式/统计术语 30min", "mod": "常识"}, {"label": "资料分析模块复盘：重做基础篇/提升篇错题+整理公式卡片", "mod": "复盘"}, {"label": "整理资料分析思维导图（术语/公式/速算/倍数平均数）", "mod": "综合"}, {"label": "申论学习：申论视频：申论5-1/5-2《单一题·对策类》（01:56:09）+ 精读 p119-167", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·对策类 1道（限时25min+精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-03": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语1《中心理解题-直接确定重点》（02:32:09，1.25–1.5倍速）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p5-82 中心理解题（转折/因果/必要条件/并列）", "mod": "综合"}, {"label": "题本07 阅读理解 p128-155 转折/因果/必要条件/并列关系", "mod": "言语"}, {"label": "申论学习：复习《申论的规矩·上册》p119-167 对策类", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·对策类 1道（二刷）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-04": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语2《中心理解题-间接确定重点》（02:39:51）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p83-110 中心理解题（行文脉络/主题词/特殊问法）", "mod": "综合"}, {"label": "题本07 阅读理解 p156-172 行文脉络/主题词/干扰选项", "mod": "言语"}, {"label": "申论学习：申论视频：申论6《单一题·特点/其他/多要素》（02:31:00）+ 精读 p168-244", "mod": "申论"}, {"label": "申论动笔：动笔：单一题·特点类/多要素组合 1道", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-05": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语3《细节判断+标题填入》（02:28:42）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p111-131 细节判断题+标题填入题", "mod": "综合"}, {"label": "题本07 阅读理解 p183-214 细节判断+标题填入", "mod": "言语"}, {"label": "申论学习：复习《申论的规矩·上册》p168-244 多要素组合", "mod": "申论"}, {"label": "申论动笔：整理单一题全类型答题框架", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-06": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语4《语句排序》（02:34:35）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p132-173 语句排序题（首尾句/捆绑/顺序）", "mod": "综合"}, {"label": "题本07 语句表达 p250-267 语句排序", "mod": "言语"}, {"label": "申论学习：申论视频：申论7-1/7-2《综合题·词句解释》（02:36:23）+ 精读 p245-270", "mod": "申论"}, {"label": "申论动笔：动笔：综合题·词句解释 1道（限时25min+精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-09-07": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语5《语句填空》（02:02:23）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p174-190 语句填空题（横线在首尾/中间）", "mod": "综合"}, {"label": "题本07 语句表达 p273-289 语句填空", "mod": "言语"}, {"label": "申论学习：复习《申论的规矩·上册》p245-270 词句解释", "mod": "申论"}, {"label": "申论动笔：动笔：综合题·词句解释 1道（二刷）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-08": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语6《逻辑填空-词的辨析》（02:45:31）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p191-207 词的辨析（词义侧重/搭配/程度/感情色彩）", "mod": "综合"}, {"label": "题本07 逻辑填空 p31-57 词语辨析", "mod": "言语"}, {"label": "申论学习：申论视频：申论8-1/8-2《综合题·观点现象/对比分析》（02:25:10）+ 精读 p271-298", "mod": "申论"}, {"label": "申论动笔：动笔：综合题·观点现象分析 1道", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-09": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "行测视频：言语7《逻辑填空-语境分析+高频成语》（02:38:05）", "mod": "言语"}, {"label": "精读《行测的思维·言语理解与表达》p208-223 语境分析+高频成语", "mod": "综合"}, {"label": "题本07 逻辑填空 p2-29 语境分析 + p59-71 高频成语夯实基础", "mod": "言语"}, {"label": "申论学习：复习《申论的规矩·上册》p271-298 观点现象/对比分析", "mod": "申论"}, {"label": "申论动笔：动笔：综合题·对比分析 1道", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-10": [{"label": "早读：高频成语10个+易混实词5组 30min", "mod": "常识"}, {"label": "言语理解模块复盘：整理易混成语+错题归类", "mod": "复盘"}, {"label": "题本07 逻辑填空 p108-126 综合训练 + 阅读理解 p227-248 综合训练", "mod": "言语"}, {"label": "整理言语题型思维导图（中心理解/语句/逻辑填空）", "mod": "综合"}, {"label": "申论学习：申论视频：申论9-1/9-2《公文题》（03:20:33）+ 精读《申论的规矩·下册》p2-97", "mod": "申论"}, {"label": "申论动笔：动笔：公文题·总结类 1道（限时30min+精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-11": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断1《图形推理-位置/样式/属性》（02:44:02，1.25–1.5倍速）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p2-57 图形推理：位置规律+样式规律+属性规律", "mod": "综合"}, {"label": "题本03 图形推理 p1-27 位置/样式/属性规律", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：复习《申论的规矩·下册》p2-97 公文题", "mod": "申论"}, {"label": "申论动笔：动笔：公文题·宣传/方案/评论类各列提纲1个", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-12": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断2《图形推理-数量规律》（02:56:51）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p58-91 图形推理：数量规律（点/线/面/角/素）", "mod": "综合"}, {"label": "题本03 图形推理 p28-51 数量规律", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：申论视频：申论10-1/10-2《文章写作题》（02:32:43）+ 精读《申论的规矩·下册》p98-238", "mod": "申论"}, {"label": "申论动笔：动笔：大作文提纲 1篇（主题+观点+结构）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-13": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断3《图形推理-特殊规律+黑白块》（02:45:28）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p92-135 图形推理：特殊规律+高频特征图（黑白块）", "mod": "综合"}, {"label": "题本03 图形推理 p52-82 特殊规律+黑白块", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：复习《申论的规矩·下册》p98-238 文章写作", "mod": "申论"}, {"label": "申论动笔：动笔：大作文 1篇（限时60min+精改）", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-09-14": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断4《图形推理-空间类》（02:51:18）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p136-180 图形推理：空间类（六面体/立体拼合/截面/三视图/多面体折叠）", "mod": "综合"}, {"label": "题本03 图形推理 p60-76 空间类", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：申论视频：申论11-1/11-2《素材积累+套卷》（02:31:56）+ 精读《申论的规矩·下册》p239-241", "mod": "申论"}, {"label": "申论动笔：整理广东申论素材卡：经济/民生/生态/基层治理", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-15": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断5《定义判断+类比推理》（02:50:27）", "mod": "判断"}, {"label": "说明：《行测的思维·判断推理》未设定义判断/类比推理章节，直接以题本定位", "mod": "综合"}, {"label": "题本03 定义判断 p93-122 + 类比推理 p123-147", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：申论视频：申论12《套卷总结》（02:30:00）+ 复习上册例题", "mod": "申论"}, {"label": "申论动笔：限时完成广东申论真题 1套（小题+大作文）并精改", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-16": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断6《逻辑判断-翻译推理/组合排列》（02:50:03）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p181-221 逻辑判断：翻译推理+集合推理+组合排列", "mod": "综合"}, {"label": "题本03 逻辑判断 p148-163 翻译推理+组合排列", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：申论视频：申论1-1/1-2《申论基础+广东考情》（02:22:00）+ 精读《申论的规矩·上册》p1-31", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-17": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断7《逻辑判断-削弱题型》（02:48:25）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p222-275 逻辑判断：论证综述+削弱题型", "mod": "综合"}, {"label": "题本03 逻辑判断 p178-187 削弱题型", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：精读《申论的规矩·上册》p32-48 广东省考申论考情", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-18": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断8《逻辑判断-加强/论证缺陷/组合排列》（02:43:45）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p285-344 逻辑判断：加强题型+论证缺陷+组合排列", "mod": "综合"}, {"label": "题本03 逻辑判断 p168-177 加强题型", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：申论视频：申论2-1/2-2《单一题·问题类》（02:16:37）+ 精读 p49-67", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-19": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "行测视频：判断9《逻辑判断-原因解释/日常结论/平行结构》（02:49:08）", "mod": "判断"}, {"label": "精读《行测的思维·判断推理》p359-370 逻辑判断：原因解释+日常结论+平行结构", "mod": "综合"}, {"label": "题本03 逻辑判断 p188-191 原因解释+平行结构", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：复习《申论的规矩·上册》p49-67 问题类", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-20": [{"label": "半周缓冲/弹性调整：只做轻量复习+补未完成项+周检；不排新任务", "mod": "复盘"}, {"label": "弃子规则演练：若累计落后>3天，先砍『选做』页与高难进阶，不动必做基础篇", "mod": "综合"}, {"label": "时政/常识碎片 30min（保持手感）", "mod": "时政"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-09-21": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "逻辑判断错题复盘：翻译/削弱/加强", "mod": "复盘"}, {"label": "题本03 逻辑判断 p148-191 错题重做", "mod": "判断"}, {"label": "整理论证题型（加强/削弱/前提/缺陷）判断清单", "mod": "综合"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：复习《申论的规矩·上册》p68-88 影响类", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-22": [{"label": "早读：图形推理特征图+逻辑翻译公式 30min", "mod": "常识"}, {"label": "判断推理阶段自测：25题限时25分钟（图推10+逻辑5+定义类比10）", "mod": "自测"}, {"label": "自测错题精析 + 薄弱考点标记", "mod": "复盘"}, {"label": "题本03 图形推理 p77-92 创新题型 + 逻辑判断 p168-191 查漏补缺", "mod": "判断"}, {"label": "粉笔App科学推理专项：物理/化学/生物/地理常识题 15题（广东特色题型，题本03无此章，用App刷题+错题归集）", "mod": "科推"}, {"label": "申论学习：申论视频：申论4《单一题·原因类》（02:44:00）+ 精读 p89-118", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-23": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "行测视频：数量1《数字推理》（03:00:00，1.25–1.5倍速）", "mod": "数量"}, {"label": "精读《行测的思维·数量关系与资料分析》p3-36 数字推理（基础/特征/非特征数列）", "mod": "综合"}, {"label": "题本05 数字推理 p181-202", "mod": "数量"}, {"label": "申论学习：复习《申论的规矩·上册》p89-118 原因类", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-24": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "行测视频：数量2《数学运算-核心方法》（02:28:00）", "mod": "数量"}, {"label": "精读《行测的思维·数量关系与资料分析》p37-76 数学运算核心方法（代入排除/数字特性/方程/赋值/线段）", "mod": "综合"}, {"label": "题本05 数学运算 p1-37 核心方法", "mod": "数量"}, {"label": "申论学习：申论视频：申论5-1/5-2《单一题·对策类》（01:56:09）+ 精读 p119-167", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-25": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "行测视频：数量3《工程/行程/经济利润》（02:32:00）", "mod": "数量"}, {"label": "精读《行测的思维·数量关系与资料分析》p77-111 工程问题+行程问题+经济利润问题", "mod": "综合"}, {"label": "题本05 数学运算 p38-90 工程/行程/经济利润", "mod": "数量"}, {"label": "申论学习：复习《申论的规矩·上册》p119-167 对策类", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-26": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "行测视频：数量4《排列组合/概率/容斥/最值/几何》（02:24:00）", "mod": "数量"}, {"label": "精读《行测的思维·数量关系与资料分析》p112-158 排列组合与概率+容斥+最值+几何", "mod": "综合"}, {"label": "题本05 数学运算 p91-135 排列组合/概率/容斥/最值/几何", "mod": "数量"}, {"label": "申论学习：申论视频：申论6《单一题·特点/其他/多要素》（02:31:00）+ 精读 p168-244", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-27": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "行测视频：数量5《专项考点》（02:33:54）", "mod": "数量"}, {"label": "精读《行测的思维·数量关系与资料分析》p159-180 专项考点（周期/数列平均数/计数杂题）", "mod": "综合"}, {"label": "题本05 数学运算 p136-180 专项考点（跳过牛吃草p147/钟表p152等低频题）", "mod": "数量"}, {"label": "申论学习：复习《申论的规矩·上册》p168-244 多要素组合", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-09-28": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "行测视频：数量6《数字推理综合+数学运算总结》（02:50:00）", "mod": "数量"}, {"label": "复习《行测的思维·数量关系与资料分析》p3-180 数量关系全框架", "mod": "综合"}, {"label": "题本05 数字推理 p181-202 错题重做", "mod": "数量"}, {"label": "申论学习：申论视频：申论7-1/7-2《综合题·词句解释》（02:36:23）+ 精读 p245-270", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-29": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "数学运算错题复盘：核心方法+高频题型", "mod": "复盘"}, {"label": "题本05 数学运算 p217-237 综合训练1-4（选做）", "mod": "数量"}, {"label": "整理数量关系蒙题/代入技巧清单", "mod": "综合"}, {"label": "申论学习：复习《申论的规矩·上册》p245-270 词句解释", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-09-30": [{"label": "早读：数字推理敏感数列+速算 30min", "mod": "常识"}, {"label": "数量关系阶段自测：15题限时15分钟（数推5+数运10）", "mod": "自测"}, {"label": "自测错题精析 + 放弃题型标记", "mod": "复盘"}, {"label": "题本05 综合训练 p217-237 错题重做（选做）", "mod": "数量"}, {"label": "申论学习：申论视频：申论8-1/8-2《综合题·观点现象/对比分析》（02:25:10）+ 精读 p271-298", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-01": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "行测视频：政理1《马克思主义哲学+马克思主义政治经济学》（02:13:00）", "mod": "政理"}, {"label": "精读《行测的思维·政治理论》p3-29 基础理论（马哲+马政经）", "mod": "综合"}, {"label": "题本01 政治理论 p4-10 马克思主义哲学夯实/高难", "mod": "政理"}, {"label": "申论学习：复习《申论的规矩·上册》p271-298 观点现象/对比分析", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-02": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "行测视频：政理2《中特+习近平新时代中国特色社会主义思想总论》（02:26:41）", "mod": "政理"}, {"label": "精读《行测的思维·政治理论》p30-53 中特+习思想总论", "mod": "综合"}, {"label": "题本01 政治理论 p19-28 邓小平理论/三个代表/科学发展观", "mod": "政理"}, {"label": "申论学习：申论视频：申论9-1/9-2《公文题》（03:20:33）+ 精读《申论的规矩·下册》p2-97", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-03": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "行测视频：政理3-1《五位一体（经济/政治）》（02:10:00）", "mod": "政理"}, {"label": "精读《行测的思维·政治理论》p54-96 经济建设+政治建设", "mod": "综合"}, {"label": "题本01 政治理论 p30-42 习近平新时代中国特色社会主义思想夯实", "mod": "政理"}, {"label": "申论学习：复习《申论的规矩·下册》p2-97 公文题", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-04": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "行测视频：政理3-2《五位一体（文化/社会/生态）+法治/国防/外交》（02:10:00）", "mod": "政理"}, {"label": "精读《行测的思维·政治理论》p97-165 文化/社会/生态文明+法治/国防军队/外交", "mod": "综合"}, {"label": "题本01 政治理论 p43-50 习思想高难进阶", "mod": "政理"}, {"label": "申论学习：申论视频：申论10-1/10-2《文章写作题》（02:32:43）+ 精读《申论的规矩·下册》p98-238", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-10-05": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "行测视频：政理4《党建+国家安全+党章党规》（01:58:00）", "mod": "政理"}, {"label": "精读《行测的思维·政治理论》p166-274 党的建设+国家安全+党章党规+党的全国代表大会+中央全会", "mod": "综合"}, {"label": "题本01 政治理论 p51-56 模块练习 + p239-250 党章党规", "mod": "政理"}, {"label": "申论学习：复习《申论的规矩·下册》p98-238 文章写作", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-06": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "政治理论错题复盘：马哲/中特/习思想时间轴", "mod": "复盘"}, {"label": "题本01 政治理论 p4-56 错题重做", "mod": "政理"}, {"label": "整理时政+政治理论易混概念表", "mod": "综合"}, {"label": "申论学习：申论视频：申论11-1/11-2《素材积累+套卷》（02:31:56）+ 精读《申论的规矩·下册》p239-241", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-07": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "早读/碎片：人文历史（题本01 p57-92）+ 科技生活（p118-145）", "mod": "常识"}, {"label": "常识选做：题本01 地理国情 p94-117 + 法律常识 p147-201 各20题", "mod": "常识"}, {"label": "整理广东人文历史+省情速记卡（常识分册p235-240/p302-308）", "mod": "综合"}, {"label": "申论学习：申论视频：申论12《套卷总结》（02:30:00）+ 复习上册例题", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-08": [{"label": "早读：时政/政治理论关键词 30min", "mod": "政理常识"}, {"label": "政理常识阶段自测：20题限时15分钟（政理12+常识8）", "mod": "自测"}, {"label": "自测错题精析 + 高频时政关键词归档", "mod": "复盘"}, {"label": "时政早读：二十届三中全会/2026年广东省政府工作报告要点", "mod": "时政"}, {"label": "申论学习：申论视频：申论1-1/1-2《申论基础+广东考情》（02:22:00）+ 精读《申论的规矩·上册》p1-31", "mod": "申论"}, {"label": "申论动笔：申论动笔/复盘：限时真题小题1道+大作文提纲1篇", "mod": "申论"}, {"label": "当日错题复盘 + 错题本归档", "mod": "复盘"}],
+  "2026-10-09": [{"label": "资料分析专项复盘：重做错题+速算保温", "mod": "复盘"}, {"label": "题本09 实战篇 p227-278 综合资料（夯实基础）", "mod": "资料"}, {"label": "申论学习：复习单一题全类型框架", "mod": "申论"}, {"label": "申论动笔：单一题综合练习 2道", "mod": "申论"}, {"label": "整理基础期各模块薄弱点清单", "mod": "复盘"}],
+  "2026-10-10": [{"label": "言语理解专项复盘：逻辑填空+阅读理解错题", "mod": "复盘"}, {"label": "题本07 综合训练 p290-347 语句表达+特殊题型", "mod": "言语"}, {"label": "申论学习：复习综合题框架", "mod": "申论"}, {"label": "申论动笔：综合题·词句解释 1道", "mod": "申论"}, {"label": "更新错题本标签", "mod": "复盘"}],
+  "2026-10-11": [{"label": "判断推理专项复盘：图推+逻辑判断错题", "mod": "复盘"}, {"label": "题本03 图形推理 p77-92 创新题型 + 逻辑判断 p168-191（创新题型选做）", "mod": "判断"}, {"label": "申论学习：复习公文题格式", "mod": "申论"}, {"label": "申论动笔：公文题 1道", "mod": "申论"}, {"label": "标记高频错题", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-10-12": [{"label": "数量关系专项复盘：核心方法+高频题型", "mod": "复盘"}, {"label": "题本05 综合训练 p217-237 错题重做（选做）", "mod": "数量"}, {"label": "申论学习：复习大作文结构", "mod": "申论"}, {"label": "申论动笔：大作文提纲 1篇", "mod": "申论"}, {"label": "整理数量可放弃题型", "mod": "复盘"}],
+  "2026-10-13": [{"label": "政治理论/常识专项复盘：时间轴+易混点", "mod": "复盘"}, {"label": "题本01 政治理论 p51-56 模块练习 + p239-250 党章党规", "mod": "政理"}, {"label": "常识保温：题本01 人文/科技/法律各10题", "mod": "常识"}, {"label": "申论学习：复习广东申论素材", "mod": "申论"}, {"label": "申论动笔：大作文素材应用 1篇", "mod": "申论"}],
+  "2026-10-14": [{"label": "基础期行测大测：限时90分钟（用广东近5年真题套卷1）", "mod": "自测"}, {"label": "基础期申论大测：广东申论真题1套（限时150分钟）", "mod": "自测"}, {"label": "深度复盘：逐模块正确率与用时分析", "mod": "复盘"}, {"label": "根据模考结果调整下周强化重点", "mod": "综合"}, {"label": "错题归档+薄弱知识点回归教材", "mod": "复盘"}],
+  "2026-10-15": [{"label": "周一：资料+数量错题回炉", "mod": "复盘"}, {"label": "题本09 实战篇 p163-226 文字/表格资料错题", "mod": "资料"}, {"label": "题本05 数学运算 p1-135 错题重做", "mod": "数量"}, {"label": "申论学习：大作文素材积累", "mod": "申论"}, {"label": "申论动笔：真题小题1道", "mod": "申论"}],
+  "2026-10-16": [{"label": "周二：言语+判断错题回炉", "mod": "复盘"}, {"label": "题本07 阅读理解+逻辑填空错题", "mod": "言语"}, {"label": "题本03 图形+逻辑判断错题", "mod": "判断"}, {"label": "申论学习：公文题再练", "mod": "申论"}, {"label": "申论动笔：公文题1道", "mod": "申论"}],
+  "2026-10-17": [{"label": "周三：政理常识+时政保温", "mod": "复盘"}, {"label": "题本01 政治理论 p4-56 错题重做", "mod": "政理"}, {"label": "常识分册重点：p235-240 广东省情 + p302-308 广东人文历史", "mod": "常识"}, {"label": "整理10月公告报名事项清单", "mod": "综合"}, {"label": "申论动笔：大作文1篇限时60分钟", "mod": "申论"}],
+  "2026-10-18": [{"label": "半周缓冲/弹性调整：只做轻量复习+补未完成项+周检；不排新任务", "mod": "复盘"}, {"label": "弃子规则演练：若累计落后>3天，先砍『选做』页与高难进阶，不动必做基础篇", "mod": "综合"}, {"label": "时政/常识碎片 30min（保持手感）", "mod": "时政"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-10-19": [{"label": "公告报名：研究职位表+选岗（预留半天，10/20-24工作日）", "mod": "综合"}, {"label": "题本03 图形推理 p28-51 数量规律 + p52-82 特殊/黑白块", "mod": "判断"}, {"label": "题本03 逻辑判断 p148-191 错题", "mod": "判断"}, {"label": "申论学习：复习综合题", "mod": "申论"}, {"label": "申论动笔：综合题 1道", "mod": "申论"}, {"label": "错题归类", "mod": "复盘"}],
+  "2026-10-20": [{"label": "题本07 逻辑填空 p72-85 高难进阶 + 阅读理解 p173-181 干扰选项", "mod": "言语"}, {"label": "题本07 语句表达 p250-289 错题", "mod": "言语"}, {"label": "申论学习：公文题格式", "mod": "申论"}, {"label": "申论动笔：公文题 1道", "mod": "申论"}, {"label": "整理易混成语", "mod": "复盘"}],
+  "2026-10-21": [{"label": "题本05 数学运算 p91-135 排列组合/概率/容斥/最值/几何", "mod": "数量"}, {"label": "题本05 数字推理 p181-202 二刷", "mod": "数量"}, {"label": "粉笔App科学推理保温：物理/化学/生物/地理各10题（广东特色，题本03无此章）", "mod": "科推"}, {"label": "题本01 政治理论 p43-50 高难进阶", "mod": "政理"}, {"label": "错题复盘", "mod": "复盘"}],
+  "2026-10-22": [{"label": "真题套卷：广东县级行测 2019年（限时90min+涂卡）", "mod": "自测"}, {"label": "行测真题深度复盘：资料/判断/言语错题", "mod": "复盘"}, {"label": "整理真题高频考点", "mod": "复盘"}],
+  "2026-10-23": [{"label": "真题套卷：广东申论 2019年县级（限时150min）", "mod": "自测"}, {"label": "申论真题精改：小题踩点+大作文立意", "mod": "复盘"}, {"label": "整理真题申论规范词", "mod": "申论"}],
+  "2026-10-24": [{"label": "行测模考：精选模拟卷1（90min严格限时）", "mod": "自测"}, {"label": "申论模考：对应模拟卷申论", "mod": "自测"}, {"label": "模考全卷复盘 + 下周计划微调", "mod": "复盘"}],
+  "2026-10-25": [{"label": "题本09 实战篇 p163-226 文字/表格资料（提升进阶）", "mod": "资料"}, {"label": "题本09 实战篇 p227-278 综合资料", "mod": "资料"}, {"label": "申论学习：大作文审题", "mod": "申论"}, {"label": "申论动笔：大作文提纲1篇", "mod": "申论"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-10-26": [{"label": "题本03 图形推理 p1-92 二刷 + 创新题型 p77-92（选做）", "mod": "判断"}, {"label": "题本03 定义判断 p93-122 + 类比推理 p123-147", "mod": "判断"}, {"label": "申论学习：论证素材", "mod": "申论"}, {"label": "申论动笔：大作文1篇", "mod": "申论"}],
+  "2026-10-27": [{"label": "题本07 逻辑填空 p86-107 实词/虚词+综合训练", "mod": "言语"}, {"label": "题本07 篇章阅读 p215-226 + 特殊题型 p303-319（选做）", "mod": "言语"}, {"label": "申论动笔：公文/综合题各1道", "mod": "申论"}],
+  "2026-10-28": [{"label": "题本05 数学运算 p38-90 工程/行程/经济利润二刷", "mod": "数量"}, {"label": "题本05 综合训练 p217-237 限时（选做）", "mod": "数量"}, {"label": "题本01 政治理论 p51-56 模块练习", "mod": "政理"}],
+  "2026-10-29": [{"label": "真题套卷：广东县级行测 2020年（限时90min）", "mod": "自测"}, {"label": "行测真题复盘：数量/资料提速", "mod": "复盘"}, {"label": "整理科学推理知识点（如需补）", "mod": "复盘"}],
+  "2026-10-30": [{"label": "真题套卷：广东申论 2020年县级（限时150min）", "mod": "自测"}, {"label": "申论精改 + 大作文评分", "mod": "复盘"}, {"label": "积累广东基层治理素材", "mod": "申论"}],
+  "2026-10-31": [{"label": "行测模考：精选模拟卷2（90min严格限时）", "mod": "自测"}, {"label": "申论模考：对应模拟卷申论", "mod": "自测"}, {"label": "模考复盘 + 公告报名确认", "mod": "复盘"}],
+  "2026-11-01": [{"label": "题本09 综合训练 p279-308 综合训练1-5", "mod": "资料"}, {"label": "错题回炉：资料分析高频错题", "mod": "资料"}, {"label": "申论学习：大作文优化", "mod": "申论"}, {"label": "申论动笔：大作文1篇", "mod": "申论"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-11-02": [{"label": "题本03 全册错题二刷（p1-191）", "mod": "判断"}, {"label": "限时训练：图推20+逻辑10+定义类比15", "mod": "判断"}, {"label": "申论动笔：小题套练3道", "mod": "申论"}],
+  "2026-11-03": [{"label": "题本07 全册错题二刷（p1-347）", "mod": "言语"}, {"label": "限时训练：逻辑填空20+阅读15", "mod": "言语"}, {"label": "申论动笔：公文题1道", "mod": "申论"}],
+  "2026-11-04": [{"label": "题本05 全册错题二刷（p1-237）", "mod": "数量"}, {"label": "限时训练：数推10+数运15", "mod": "数量"}, {"label": "题本01 政治理论 p4-56 三刷", "mod": "政理"}],
+  "2026-11-05": [{"label": "真题套卷：广东县级行测 2021年（限时90min）", "mod": "自测"}, {"label": "行测真题复盘：时间分配再优化", "mod": "复盘"}, {"label": "整理行测考场答题顺序", "mod": "综合"}],
+  "2026-11-06": [{"label": "真题套卷：广东申论 2021年县级（限时150min）", "mod": "自测"}, {"label": "申论精改 + 规范词整理", "mod": "复盘"}, {"label": "大作文范文精读1篇", "mod": "申论"}],
+  "2026-11-07": [{"label": "行测模考：精选模拟卷3（90min严格限时）", "mod": "自测"}, {"label": "申论模考：对应模拟卷申论", "mod": "自测"}, {"label": "模考复盘 + 下阶段冲刺重点", "mod": "复盘"}],
+  "2026-11-08": [{"label": "资料分析限时15题+错题复盘", "mod": "资料"}, {"label": "判断限时25题+错题复盘", "mod": "判断"}, {"label": "申论动笔：小题套练2道", "mod": "申论"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-11-09": [{"label": "言语限时35题+错题复盘", "mod": "言语"}, {"label": "数量限时15题+错题复盘", "mod": "数量"}, {"label": "政理/常识限时20题", "mod": "政理"}],
+  "2026-11-10": [{"label": "真题套卷：广东县级行测 2022年（限时90min）", "mod": "自测"}, {"label": "行测真题深度复盘", "mod": "复盘"}],
+  "2026-11-11": [{"label": "真题套卷：广东申论 2022年县级（限时150min）", "mod": "自测"}, {"label": "申论真题精改", "mod": "复盘"}],
+  "2026-11-12": [{"label": "真题套卷：广东县级行测 2023年（限时90min）", "mod": "自测"}, {"label": "行测真题复盘", "mod": "复盘"}],
+  "2026-11-13": [{"label": "真题套卷：广东申论 2023年县级（限时150min）", "mod": "自测"}, {"label": "申论精改", "mod": "复盘"}],
+  "2026-11-14": [{"label": "全真模拟：行测+申论按考试时段各1套", "mod": "自测"}, {"label": "全科复盘 + 冲刺阶段清单", "mod": "复盘"}],
+  "2026-11-15": [{"label": "半周缓冲/弹性调整：只做轻量复习+补未完成项+周检；不排新任务", "mod": "复盘"}, {"label": "弃子规则演练：若累计落后>3天，先砍『选做』页与高难进阶，不动必做基础篇", "mod": "综合"}, {"label": "时政/常识碎片 30min（保持手感）", "mod": "时政"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-11-16": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-17": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-18": [{"label": "早读：时政/广东省情热点 30min", "mod": "时政"}, {"label": "行测全真模考：第1套（严格90min+涂卡）", "mod": "自测"}, {"label": "行测模考深度复盘≥90min：错题归类+逐题回归教材页码（硬性≥考试时长）", "mod": "复盘"}, {"label": "速算卡/公式卡循环背诵", "mod": "综合"}],
+  "2026-11-19": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-20": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-21": [{"label": "早读：政治理论关键词 30min", "mod": "时政"}, {"label": "申论全真模考：第2套（严格150min）", "mod": "自测"}, {"label": "申论模考精改≥150min：踩点/结构/立意+互批反馈整理（硬性≥考试时长）", "mod": "复盘"}, {"label": "大作文框架默写（保持手感）", "mod": "申论"}],
+  "2026-11-22": [{"label": "时政/常识背诵 1h（二十届三中全会/2026省府报告）", "mod": "时政"}, {"label": "本周错题总复习：资料→判断→言语→数量→政理常识", "mod": "复盘"}, {"label": "申论互批：与考友交换批改本周习作+吸收反馈", "mod": "申论"}, {"label": "下周计划微调/打印准考证准备", "mod": "综合"}, {"label": "早睡调整作息，恢复精力", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-11-23": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-24": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-25": [{"label": "早读：时政/广东省情热点 30min", "mod": "时政"}, {"label": "行测全真模考：第2套（严格90min+涂卡）", "mod": "自测"}, {"label": "行测模考深度复盘≥90min：错题归类+逐题回归教材页码（硬性≥考试时长）", "mod": "复盘"}, {"label": "速算卡/公式卡循环背诵", "mod": "综合"}],
+  "2026-11-26": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-27": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-11-28": [{"label": "早读：政治理论关键词 30min", "mod": "时政"}, {"label": "申论全真模考：第3套（严格150min）", "mod": "自测"}, {"label": "申论模考精改≥150min：踩点/结构/立意+互批反馈整理（硬性≥考试时长）", "mod": "复盘"}, {"label": "大作文框架默写（保持手感）", "mod": "申论"}],
+  "2026-11-29": [{"label": "时政/常识背诵 1h（二十届三中全会/2026省府报告）", "mod": "时政"}, {"label": "本周错题总复习：资料→判断→言语→数量→政理常识", "mod": "复盘"}, {"label": "申论互批：与考友交换批改本周习作+吸收反馈", "mod": "申论"}, {"label": "下周计划微调/打印准考证准备", "mod": "综合"}, {"label": "早睡调整作息，恢复精力", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-11-30": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-12-01": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-12-02": [{"label": "早读：时政/广东省情热点 30min", "mod": "时政"}, {"label": "行测全真模考：第3套（严格90min+涂卡）", "mod": "自测"}, {"label": "行测模考深度复盘≥90min：错题归类+逐题回归教材页码（硬性≥考试时长）", "mod": "复盘"}, {"label": "速算卡/公式卡循环背诵", "mod": "综合"}],
+  "2026-12-03": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-12-04": [{"label": "早读：时政/常识碎片 30min", "mod": "时政"}, {"label": "分模块限时训练：按最近模考弱项选2个模块各15-20题", "mod": "自测"}, {"label": "训练复盘：错题归集+回归对应教材页码", "mod": "复盘"}, {"label": "申论小题精练1道（保持手感）", "mod": "申论"}],
+  "2026-12-05": [{"label": "早读：政治理论关键词 30min", "mod": "时政"}, {"label": "申论全真模考：第4套（严格150min）", "mod": "自测"}, {"label": "申论模考精改≥150min：踩点/结构/立意+互批反馈整理（硬性≥考试时长）", "mod": "复盘"}, {"label": "大作文框架默写（保持手感）", "mod": "申论"}],
+  "2026-12-06": [{"label": "时政/常识背诵 1h（二十届三中全会/2026省府报告）", "mod": "时政"}, {"label": "本周错题总复习：资料→判断→言语→数量→政理常识", "mod": "复盘"}, {"label": "申论互批：与考友交换批改本周习作+吸收反馈", "mod": "申论"}, {"label": "下周计划微调/打印准考证准备", "mod": "综合"}, {"label": "早睡调整作息，恢复精力", "mod": "复盘"}, {"label": "🟢 休息半天：周日下午不排任何任务，彻底放松充电", "mod": "综合"}],
+  "2026-12-07": [{"label": "🎯 笔试日：行测 14:00–15:30，申论 16:15–18:45。祝上岸！", "mod": "自测"}]
+};
+
+
+/* ================= 工具函数 ================= */
+const pad = n => (n<10?"0":"")+n;
+function dstr(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function clone(d){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()); }
+function addDays(d,n){ const x=clone(d); x.setDate(x.getDate()+n); return x; }
+function mondayOf(d){ const x=clone(d); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); return x; }
+function weekIndex(d){ return Math.round((mondayOf(d)-MON0)/(7*86400000)); }
+function phaseOf(d){
+  const t=d.getTime();
+  if(t < new Date(2026,9,18).getTime()) return 0;  // < 10/18
+  if(t < new Date(2026,10,15).getTime()) return 1;  // < 11/15
+  return 2;
+}
+function isExam(d){ return dstr(d)===dstr(EXAM); }
+function dayTasks(d){
+  if(d < START) return [];
+  const ds=dstr(d);
+  if(TASKS_BY_DATE[ds]) return TASKS_BY_DATE[ds];
+  if(isExam(d)) return [{label:"🎯 笔试日：行测 14:00–15:30，申论 16:15–18:45。祝上岸！", mod:"自测"}];
+  return [{label:"弹性调整日：复习本周错题/补未完成项", mod:"复盘"}];
+}
+function allDates(){
+  const arr=[]; let d=clone(START);
+  while(d<=EXAM){ arr.push({date:clone(d), str:dstr(d), tasks:dayTasks(d)}); d=addDays(d,1); }
+  return arr;
+}
+let DAYS = allDates();
+
+/* 周主线说明（用于日视图备注） */
+const WEEKS = [
+  {tiku:"资料分析：视频资料1-4 + 题本09基础篇p1-74（统计术语/基期/增长量/比重）"},
+  {tiku:"资料收尾+言语启动：视频资料5-8、言语1 + 题本09提升篇p107-162（倍数/平均数/综合分析）"},
+  {tiku:"言语理解：视频言语1-5 + 题本07逻辑填空/阅读理解"},
+  {tiku:"言语收尾+判断启动：视频言语6-7、判断1-2 + 题本03图形p1-51"},
+  {tiku:"判断推理：视频判断3-6 + 题本03图形p52-92/逻辑p168-191 + 粉笔App科推保温"},
+  {tiku:"判断收尾+数量启动：视频判断7-9、数量1-2 + 题本03逻辑p168-191/题本05数推"},
+  {tiku:"数量关系：视频数量3-6 + 题本05数运p38-237"},
+  {tiku:"数量收尾+政治理论启动：视频数量复习、政理1-2 + 题本01政理p4-28"},
+  {tiku:"政治理论：视频政理3-4 + 题本01政理p30-250/常识选做"},
+  {tiku:"基础期收尾：模块复盘+阶段自测+错题回炉"},
+  {tiku:"强化第1周：资料/判断/言语高难进阶 + 2019年广东真题"},
+  {tiku:"强化第2周：综合资料/定义类比/篇章阅读 + 2020年广东真题"},
+  {tiku:"强化第3周：全册错题二刷 + 2021年广东真题"},
+  {tiku:"强化第4周：限时套卷 + 2022/2023年广东真题"},
+  {tiku:"冲刺：全真模考（一/三/五行测，二/四/六申论）+ 时政背诵"},
+];
+function weekSpec(d){ const i=weekIndex(d); return WEEKS[Math.min(Math.max(i,0),WEEKS.length-1)]; }
+
+/* ================= Supabase 云同步配置 ================= */
+const SUPABASE_URL = "https://xxclvxenjqjvmcawmwdd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4Y2x2eGVuanFqdm1jYXdtd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1ODI5NzgsImV4cCI6MjEwMzE1ODk3OH0.rJUQ3ybLLT4tXhSjsAG7xaQS3b5GAFuezAtUnOHkJe4";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function setSyncStatus(state){
+  const el=document.getElementById("syncStatus");
+  if(!el) return;
+  if(state==="synced"){ el.textContent="云端已同步"; el.style.background="#eafaf1"; el.style.color="#2f9e6e"; }
+  else if(state==="syncing"){ el.textContent="同步中"; el.style.background="#eef0f5"; el.style.color="#7a8a83"; }
+  else { el.textContent="本地模式"; el.style.background="#fff8e8"; el.style.color="#b07800"; }
+}
+let _cloudTimer=null;
+function saveToCloud(){
+  clearTimeout(_cloudTimer);
+  _cloudTimer=setTimeout(()=>{ doSaveToCloud(); }, 300);
+}
+async function doSaveToCloud(){
+  try{
+    setSyncStatus("syncing");
+    const { data: upData, error: upErr } = await supabase
+      .from("checkins")
+      .update({ data: store, updated_at: new Date().toISOString() })
+      .eq("id", 1)
+      .select();
+    if(upErr) throw upErr;
+    if(!upData || upData.length===0){
+      const { error: insErr } = await supabase
+        .from("checkins")
+        .insert({ id: 1, data: store, updated_at: new Date().toISOString() });
+      if(insErr) throw insErr;
+    }
+    setSyncStatus("synced");
+  }catch(e){
+    console.warn("[Supabase] 云端同步失败，已降级为本地保存", e);
+    setSyncStatus("local");
+  }
+}
+async function loadFromCloud(){
+  try{
+    setSyncStatus("syncing");
+    const { data, error } = await supabase
+      .from("checkins")
+      .select("data")
+      .eq("id", 1)
+      .maybeSingle();
+    if(error) throw error;
+    if(data && data.data){
+      store = data.data || {};
+      save();
+      renderAll();
+      setSyncStatus("synced");
+    }else{
+      if(Object.keys(store).length>0){
+        await doSaveToCloud();
+      }else{
+        setSyncStatus("synced");
+      }
+    }
+  }catch(e){
+    console.warn("[Supabase] 云端拉取失败，保持本地数据", e);
+    setSyncStatus("local");
+  }
+}
+
+/* ================= 打卡存储 ================= */
+const LS_KEY="gd2027_check_v1";
+let store={};
+try{ store=JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(e){ store={}; }
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(store)); }catch(e){} }
+function isDone(ds,idx){ return !!(store[ds] && store[ds][idx]); }
+function toggle(ds,idx){
+  if(!store[ds]) store[ds]={};
+  store[ds][idx]=!store[ds][idx];
+  save(); saveToCloud(); renderAll();
+}
+function resetStore(){ if(confirm("确定清空所有打卡记录吗？")){ store={}; save(); saveToCloud(); renderAll(); } }
+
+/* ================= 统计 ================= */
+function totalTasks(){ let n=0; DAYS.forEach(d=>n+=d.tasks.length); return n; }
+function doneTasks(){ let n=0; DAYS.forEach(d=>d.tasks.forEach((_,i)=>{ if(isDone(d.str,i)) n++; })); return n; }
+function dayDoneCount(ds){ const t=DAYS.find(d=>d.str===ds); if(!t) return {done:0,total:0}; let done=0; t.tasks.forEach((_,i)=>{ if(isDone(ds,i)) done++; }); return {done,total:t.tasks.length}; }
+function phaseStats(){
+  const res={};
+  PHASES.forEach(p=>res[p.id]={done:0,total:0});
+  DAYS.forEach(d=>{ const p=phaseOf(d.date); d.tasks.forEach((_,i)=>{ res[p].total++; if(isDone(d.str,i)) res[p].done++; }); });
+  return res;
+}
+function moduleStats(){
+  const res={};
+  DAYS.forEach(d=>d.tasks.forEach((t,i)=>{
+    const m=t.mod||"综合";
+    if(!res[m]) res[m]={done:0,total:0};
+    res[m].total++; if(isDone(d.str,i)) res[m].done++;
+  }));
+  return res;
+}
+function streak(){
+  let s=0; let d=clone(new Date()); 
+  // 从今天(或昨天)往前数连续"有完成"的天
+  let cur = new Date();
+  // 若今天还没打卡，从昨天起算
+  if(dayDoneCount(dstr(cur)).done===0) cur=addDays(cur,-1);
+  while(cur>=START){
+    const ds=dstr(cur);
+    if(DAYS.some(x=>x.str===ds) && dayDoneCount(ds).done>0){ s++; }
+    else break;
+    cur=addDays(cur,-1);
+  }
+  return s;
+}
+function checkedDays(){ let n=0; DAYS.forEach(d=>{ if(dayDoneCount(d.str).done>0) n++; }); return n; }
+/* ================= 渲染 ================= */
+const VIEW={month:"month",week:"week",day:"day"};
+let currentView="month";
+let cursor=clone(new Date());      // 月/周导航锚点
+let selected=clone(new Date());    // 日视图选中日
+
+function fmtMD(d){ return (d.getMonth()+1)+"月"+d.getDate()+"日"; }
+function fmtWeek(d){ return (d.getMonth()+1)+"月"+(d.getDate())+"日"; }
+
+function phaseColor(d){
+  if(isExam(d)) return "var(--c-exam)";
+  return PHASES[phaseOf(d)].color;
+}
+function phaseName(d){ if(isExam(d)) return "考试日"; return PHASES[phaseOf(d)].name; }
+
+function renderAll(){ renderCountdown(); renderStats(); renderStrip(); renderNav(); renderView(); renderModStats(); }
+
+function renderCountdown(){
+  const now=new Date();
+  const diff=EXAM-now;
+  const days=Math.max(0, Math.ceil(diff/86400000));
+  document.getElementById("countDays").textContent = diff>0 ? days : "0";
+  const h=Math.floor((diff%86400000)/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+  document.getElementById("countClock").textContent = diff>0 ? pad(h)+":"+pad(m)+":"+pad(s) : "已到考试日";
+  document.getElementById("statRemain").innerHTML = days+"<small> 天</small>";
+}
+
+function renderStats(){
+  const done=doneTasks(), total=totalTasks();
+  const pct= total? Math.round(done/total*100):0;
+  document.getElementById("statOverall").innerHTML=pct+"<small>%</small>";
+  document.getElementById("barOverall").style.width=pct+"%";
+  document.getElementById("statOverallNum").textContent="已完成 "+done+" / "+total+" 项";
+  const cd=checkedDays();
+  document.getElementById("statDays").innerHTML=cd+"<small> 天</small>";
+  document.getElementById("barDays").style.width= total? Math.round(cd/DAYS.length*100)+"%":"0%";
+  document.getElementById("statStreak").textContent="连续打卡 "+streak()+" 天";
+  // 今日
+  const today=dstr(new Date());
+  const tt=dayDoneCount(today);
+  document.getElementById("statToday").innerHTML=tt.total+"<small> 项</small>";
+  document.getElementById("statTodayNum").textContent="已完成 "+tt.done+" / "+tt.total;
+  document.getElementById("barToday").style.width= tt.total? Math.round(tt.done/tt.total*100)+"%":"0%";
+  document.getElementById("statPhase").textContent="当前阶段："+phaseName(new Date());
+}
+
+function renderStrip(){
+  const ps=phaseStats();
+  const el=document.getElementById("phaseStrip");
+  el.innerHTML = PHASES.map(p=>{
+    const t=ps[p.id].total, d=ps[p.id].done, pct=t?Math.round(d/t*100):0;
+    return '<div class="ph" style="--phc:'+p.color+';border-left-color:'+p.color+'">'
+      +'<div class="t">'+p.name+'</div><div class="d">'+p.range+'</div>'
+      +'<div class="bar"><i style="width:'+pct+'%"></i></div>'
+      +'<div class="pct">'+d+'/'+t+' · '+pct+'%</div></div>';
+  }).join("");
+}
+
+function renderModStats(){
+  const ms=moduleStats();
+  // 优先按既定主干顺序排列，再把白名单之外的模块（常识/时政/科推/模考等）追加到末尾，确保全部显示
+  const preferred=["资料","判断","言语","数量","政理常识","申论","综合","复盘","自测"];
+  const seen=new Set();
+  const order=preferred.filter(m=>{ if(ms[m]){ seen.add(m); return true; } return false; })
+    .concat(Object.keys(ms).filter(m=>!seen.has(m)));
+  const el=document.getElementById("modStats");
+  el.innerHTML = order.map(m=>{
+    const pct=ms[m].total?Math.round(ms[m].done/ms[m].total*100):0;
+    return '<div class="mod-row"><span class="name">'+m+'</span><div class="bar"><i style="width:'+pct+'%;background:'+modColor(m)+'"></i></div><span class="num">'+ms[m].done+'/'+ms[m].total+'</span></div>';
+  }).join("");
+}
+function modColor(m){
+  const map={"资料":"#2f7d5f","判断":"#3971b8","言语":"#7b5cb8","数量":"#c0782b","政理常识":"#c05b4d","申论":"#2f8f86","复盘":"#8a8f9a","自测":"#a3362f","综合":"#55646d","常识":"#5a7d2f","时政":"#8a5cb8","模考":"#a3362f","科推":"#b8632f"};
+  return map[m]||"#55646d";
+}
+
+function renderNav(){
+  const lbl=document.getElementById("navLbl");
+  if(currentView==="month"){ lbl.textContent=cursor.getFullYear()+"年"+(cursor.getMonth()+1)+"月"; }
+  else if(currentView==="week"){ const m=mondayOf(cursor); lbl.textContent=fmtWeek(m)+" – "+fmtWeek(addDays(m,6)); }
+  else { lbl.textContent=fmtMD(selected); }
+}
+
+function renderView(){
+  const c=document.getElementById("viewContainer");
+  if(currentView==="month") c.innerHTML=renderMonth();
+  else if(currentView==="week") c.innerHTML=renderWeek();
+  else c.innerHTML=renderDay();
+  bindCheckboxes();
+}
+
+function renderMonth(){
+  const y=cursor.getFullYear(), m=cursor.getMonth();
+  const first=new Date(y,m,1), startDow=(first.getDay()+6)%7;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  let html='<div class="cal-head">'+["一","二","三","四","五","六","日"].map(x=>"<div>"+x+"</div>").join("")+"</div><div class=\"cal-grid\">";
+  for(let i=0;i<startDow;i++) html+='<div class="day out"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=new Date(y,m,d); const ds=dstr(dt);
+    const inRange = dt>=START && dt<=EXAM;
+    const exam=isExam(dt), today=dstr(new Date())===ds;
+    const dd=dayDoneCount(ds);
+    const item=DAYS.find(x=>x.str===ds);
+    let brief="";
+    if(item && item.tasks[0]) brief=item.tasks[0].label;
+    if(!inRange){ html+='<div class="day out"><div class="num">'+d+'</div></div>'; continue; }
+    html+='<div class="day '+(exam?"exam":"")+' '+(today?"today":"")+'" data-ds="'+ds+'">'
+      +'<div class="num">'+d+'</div>'
+      +'<div class="tag" style="background:'+phaseColor(dt)+'">'+(exam?"考试":phaseName(dt))+'</div>'
+      +'<div class="brief">'+brief+'</div>'
+      +'<div class="done">'+(dd.total? dd.done+"/"+dd.total : "")+'</div>'
+      +(dd.total?'<div class="day-bar"><i style="background:'+phaseColor(dt)+';width:'+Math.round(dd.done/dd.total*100)+'%"></i></div>':'')
+      +'</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+function renderWeek(){
+  const m=mondayOf(cursor);
+  let html='<div class="week-grid">';
+  for(let i=0;i<7;i++){
+    const dt=addDays(m,i); const ds=dstr(dt);
+    const exam=isExam(dt), today=dstr(new Date())===ds;
+    const inRange=dt>=START && dt<=EXAM;
+    const item=DAYS.find(x=>x.str===ds);
+    const dd=dayDoneCount(ds);
+    if(!inRange){ html+='<div class="wday" style="opacity:.35"><div class="top"><b>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</b><span>'+"日一二三四五六".charAt(dt.getDay())+'</span></div></div>'; continue; }
+    let list="";
+    (item?item.tasks:[]).forEach((t,idx)=>{ const dn=isDone(ds,idx); list+='<li><input type="checkbox" data-ds="'+ds+'" data-idx="'+idx+'" '+(dn?"checked":"")+'><span class="'+(dn?"done-txt":"")+'">'+t.label+'</span></li>'; });
+    html+='<div class="wday '+(exam?"exam":"")+' '+(today?"today":"")+'" data-ds="'+ds+'">'
+      +'<div class="top"><b>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</b><span>'+"日一二三四五六".charAt(dt.getDay())+'</span></div>'
+      +'<ul class="tlist">'+list+'</ul>'
+      +(dd.total?'<div class="wday-bar"><i style="background:'+phaseColor(dt)+';width:'+Math.round(dd.done/dd.total*100)+'%"></i></div>':'')
+      +'</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+/* ---------- 日视图时间表生成 ---------- */
+function kindOf(t){
+  const L=t.label||"", M=t.mod||"综合";
+  if(M==="复盘") return "review";
+  if(/早读|常识|时政碎片|碎片/.test(L)) return "morning";
+  if(M==="申论"){
+    if(/动笔|作答|套练|小题|大作文|互批|精改/.test(L)) return "essay-do";
+    return "essay-learn";
+  }
+  if(/视频|精讲|听课/.test(L)) return "lecture";
+  if(/精读|例题|教材|思维|笔记/.test(L)) return "read";
+  if(/题本|刷题|练习|训练|专项|App|粉笔|模考|全真|实战/.test(L)) return "practice";
+  return "other";
+}
+
+const SCHED_SLOTS=[
+  {t:"08:00–08:30", name:"晨读·常识碎片", accept:["morning"]},
+  {t:"08:30–10:30", name:"主科①·视频精听", accept:["lecture"]},
+  {t:"10:40–11:30", name:"教材精读·例题重做", accept:["read"]},
+  {t:"11:30–12:00", name:"题本配额①·资料", accept:["practice"], mods:["资料"]},
+  {t:"12:00–14:00", name:"午休", kind:"rest"},
+  {t:"14:00–15:30", name:"申论·学习/精读", accept:["essay-learn"]},
+  {t:"15:40–16:20", name:"申论·动笔限时", accept:["essay-do"]},
+  {t:"16:30–17:10", name:"题本配额②·判断/言语", accept:["practice"], mods:["判断","言语"]},
+  {t:"17:10–19:00", name:"晚餐·休息", kind:"rest"},
+  {t:"19:00–19:40", name:"题本配额③·数量/政理", accept:["practice"], mods:["数量","政理常识"]},
+  {t:"19:40–20:10", name:"复盘·错题归档", accept:["review","other"]}
+];
+
+function buildSchedule(tasks){
+  const slots=SCHED_SLOTS.map(s=>({t:s.t, name:s.name, kind:s.kind||"", items:[]}));
+  const overflow=[];
+  (tasks||[]).forEach((t,i)=>{
+    const label=t.label||"";
+    if(/休息半天|彻底放松|不排任务/.test(label)){
+      slots.push({t:"弹性时段", name:label.replace(/[🟢]/g,"").trim(), kind:"rest", items:[]});
+      return;
+    }
+    const k=kindOf(t);
+    let placed=false;
+    for(const s of slots){
+      if(s.kind==="rest") continue;
+      if(s.accept && s.accept.indexOf(k)<0) continue;
+      if(s.mods && s.mods.indexOf(t.mod||"综合")<0) continue;
+      s.items.push({i:i, label:label, mod:t.mod});
+      placed=true; break;
+    }
+    if(!placed) overflow.push({i:i, label:label, mod:t.mod});
+  });
+  if(overflow.length){
+    slots.push({t:"弹性时段", name:"其他任务", kind:"", items:overflow});
+  }
+  return slots;
+}
+
+function restNote(name){
+  return "休息 / 弹性时间：散步、运动或复盘错题本，不排新任务。";
+}
+
+function renderDay(){
+  const ds=dstr(selected);
+  const item=DAYS.find(x=>x.str===ds);
+  const exam=isExam(selected);
+  const tasks=item?item.tasks:[];
+  const hasZice = tasks.some(t=>/模考|全真|整套|实战篇/.test(t.label||""));
+  const blocks=buildSchedule(tasks);
+  const dd=dayDoneCount(ds);
+  const pct= dd.total? Math.round(dd.done/dd.total*100):0;
+  let schedHtml="";
+  blocks.forEach(b=>{
+    let body="";
+    if(b.items.length){
+      body = b.items.map(it=>{
+        const dn=isDone(ds, it.i);
+        return '<li class="task '+(dn?"done":"")+'">'
+          +'<input type="checkbox" data-ds="'+ds+'" data-idx="'+it.i+'" '+(dn?"checked":"")+'>'
+          +'<div class="body"><div class="tt"><span class="mod mod-'+(it.mod||"综合")+'">'+(it.mod||"综合")+'</span> '+it.label+'</div></div>'
+          +'</li>';
+      }).join("");
+    } else {
+      body = '<li class="rest-hint">'+(b.kind==="rest"?restNote(b.name):(hasZice?"模考日：专注试卷节奏，其余时段休息 / 查漏补缺":"弹性安排：复习 / 补弱 / 整理笔记"))+'</li>';
+    }
+    schedHtml += '<div class="sched-block '+(b.kind==="rest"?"rest":"")+'">'
+      +'<div class="sb-time">'+b.t+'</div>'
+      +'<div class="sb-body"><div class="sb-name">'+b.name+'</div><ul class="task-list">'+body+'</ul></div>'
+      +'</div>';
+  });
+  const note = tasks[0] ? "今日主线："+tasks[0].label : "休息/弹性调整";
+  return '<div class="day-panel">'
+    +'<div class="day-head"><h2>'+(selected.getMonth()+1)+'月'+selected.getDate()+'日 '+("日一二三四五六".charAt(selected.getDay()))+' · '+(exam?"考试日":phaseName(selected))+'</h2><div class="meta">已完成 '+dd.done+'/'+dd.total+'</div></div>'
+    +'<div class="day-prog-wrap"><div class="bar day-prog"><i style="width:'+pct+'%"></i></div><div class="day-prog-txt">'+pct+'% 完成</div></div>'
+    +(exam?'<div class="day-note">🎯 考试日：行测 14:00–15:30，申论 16:15–18:45。祝上岸！</div>':('<div class="day-note">📌 '+note+'</div>'))
+    +'<div class="sched-title">🕒 今日时间表（08:00–20:10 · 约 7.5h）</div>'
+    +'<div class="sched">'+schedHtml+'</div>'
+    +'</div>';
+}
+
+function bindCheckboxes(){
+  document.querySelectorAll('input[type=checkbox][data-ds]').forEach(cb=>{
+    cb.addEventListener('change',()=>{ toggle(cb.getAttribute("data-ds"), +cb.getAttribute("data-idx")); });
+  });
+  document.querySelectorAll('.day[data-ds]').forEach(el=>{
+    el.addEventListener('click',()=>{ selected=new Date(el.getAttribute("data-ds")); currentView="day"; setSeg("day"); renderAll(); });
+  });
+  document.querySelectorAll('.wday[data-ds]').forEach(el=>{
+    el.addEventListener('click',(e)=>{ if(e.target.tagName==="INPUT") return; selected=new Date(el.getAttribute("data-ds")); currentView="day"; setSeg("day"); renderAll(); });
+  });
+}
+
+function setSeg(v){
+  document.querySelectorAll(".seg button").forEach(b=>b.classList.toggle("on", b.getAttribute("data-view")===v));
+}
+
+/* ================= 交互绑定 ================= */
+document.querySelectorAll(".seg button").forEach(b=>{
+  b.addEventListener("click",()=>{ currentView=b.getAttribute("data-view"); setSeg(currentView); renderNav(); renderView(); });
+});
+document.getElementById("prevBtn").addEventListener("click",()=>{
+  if(currentView==="month") cursor=new Date(cursor.getFullYear(),cursor.getMonth()-1,1);
+  else if(currentView==="week") cursor=addDays(cursor,-7);
+  else selected=addDays(selected,-1);
+  renderNav(); renderView();
+});
+document.getElementById("nextBtn").addEventListener("click",()=>{
+  if(currentView==="month") cursor=new Date(cursor.getFullYear(),cursor.getMonth()+1,1);
+  else if(currentView==="week") cursor=addDays(cursor,7);
+  else selected=addDays(selected,1);
+  renderNav(); renderView();
+});
+document.getElementById("todayBtn").addEventListener("click",()=>{
+  const now=new Date();
+  cursor=new Date(now.getFullYear(),now.getMonth(),1); selected=clone(now);
+  renderNav(); renderView();
+});
+document.getElementById("resetBtn").addEventListener("click",resetStore);
+document.getElementById("examDate").addEventListener("change",(e)=>{
+  const v=e.target.value; if(!v) return;
+  EXAM=new Date(v+"T00:00:00");
+  DAYS=allDates();
+  renderAll();
+});
+
+/* ================= 启动 ================= */
+// 初始锚点直接落到计划起点所在周，避免周视图一打开是空白周（START 之前的日期无任务）
+selected=clone(START);
+cursor=mondayOf(START);
+renderAll();
+renderModStats();
+loadFromCloud();
+setInterval(()=>{ renderCountdown(); }, 1000);
+</script>
+</body>
+</html>
