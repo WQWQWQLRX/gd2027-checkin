@@ -6637,6 +6637,8 @@
                 localStorage.setItem('gd2027_tasks', JSON.stringify(taskData));
                 localStorage.setItem('gd2027_checkin', JSON.stringify(checkinData));
             } catch(e) {}
+            // 记录本地数据已被（用户操作或首次初始化）修改，用于避免 loadFromCloud 覆盖用户操作
+            if (typeof _userModified === 'boolean') _userModified = true;
             if (typeof scheduleSync === 'function') scheduleSync();
         }
         function loadData() {
@@ -6650,20 +6652,28 @@
 
         function getDayTasks(dateStr) {
             // 内置 DAILY_TASKS 为最新、最具体的版本，始终以其为准重新生成；
-            // 仅保留用户在 localStorage 中已勾选的完成状态（按 id 对齐）。
+            // 仅保留用户在 localStorage 中已勾选的完成状态（按 id 对齐），并合并用户自定义任务。
             if (DAILY_TASKS[dateStr]) {
                 const seed = JSON.parse(JSON.stringify(DAILY_TASKS[dateStr]));
                 const prev = taskData[dateStr];
                 if (prev) {
                     ['morning', 'afternoon', 'evening'].forEach(p => {
+                        const prevList = prev[p] || [];
                         (seed[p] || []).forEach(t => {
-                            const o = (prev[p] || []).find(x => x.id === t.id && x.name === t.name);
+                            const o = prevList.find(x => x.id === t.id && x.name === t.name);
                             if (o) t.done = o.done;
                         });
+                        // 合并自定义任务：其 id 由 Date.now()+Math.random() 生成（数值远大于内置 id 1-11），
+                        // 按 period 原样保留 id/name/module/type/done；内置任务 id 均在 seed 中，按 id 去重避免重复。
+                        const customs = prevList.filter(x => typeof x.id === 'number' && x.id > 1000 && !(seed[p] || []).some(y => y.id === x.id));
+                        if (customs.length) seed[p] = (seed[p] || []).concat(customs);
                     });
                 }
+                // 仅当内容实际变化时才写 localStorage 并触发云同步，避免浏览页面反复写盘/写云端（写放大 + 与 loadFromCloud 竞态）
+                const prevJson = prev ? JSON.stringify(prev) : null;
+                const newJson = JSON.stringify(seed);
                 taskData[dateStr] = seed;
-                saveData();
+                if (prevJson !== newJson) saveData();
                 return seed;
             }
             if (!taskData[dateStr]) {
@@ -7306,6 +7316,8 @@
             switchTab('day');
             initEvents();
             selectedMonthDate = new Date('2026-08-27');
+            // 初始化渲染可能触发首次 saveData（如首次生成某日期默认任务），此处统一重置用户修改标记，避免误跳云端覆盖
+            if (typeof _userModified === 'boolean') _userModified = false;
 
             // 隐藏骨架屏
             setTimeout(() => {
@@ -7331,12 +7343,13 @@ const SUPABASE_URL = 'https://xxclvxenjqjvmcawmwdd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4Y2x2eGVuanFqdm1jYXdtd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1ODI5NzgsImV4cCI6MjEwMzE1ODk3OH0.rJUQ3ybLLT4tXhSjsAG7xaQS3b5GAFuezAtUnOHkJe4';
 const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 let _syncTimer = null;
+let _userModified = false;
 
 function setSyncStatus(text, mode) {
     const el = document.getElementById('syncStatus');
     if (!el) return;
     el.textContent = text;
-    el.className = 'text-xs px-2.5 py-1 rounded-full ' + (mode === 'ok' ? 'bg-green-50 text-green-600' : mode === 'sync' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500');
+    el.className = 'text-xs px-2.5 py-1 rounded-full ' + (mode === 'ok' ? 'bg-green-50 text-green-600' : mode === 'sync' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600');
 }
 
 function scheduleSync() {
@@ -7356,7 +7369,7 @@ async function saveToCloud() {
         if (error) throw error;
         if (!data || data.length === 0) {
             const { error: insErr } = await supabaseClient.from('checkins')
-                .insert({ id: 1, data: payload });
+                .insert({ id: 1, data: payload, updated_at: new Date().toISOString() });
             if (insErr) throw insErr;
         }
         setSyncStatus('云端已同步', 'ok');
@@ -7375,6 +7388,12 @@ async function loadFromCloud() {
         if (error) throw error;
         if (data && data.data && typeof data.data === 'object') {
             const d = data.data;
+            // 用户已在本地操作过（勾选/添加任务等），跳过覆盖 tasks/checkin 并保留本地数据，
+            // 避免云端旧数据覆盖用户操作；本地数据稍后会经 saveToCloud 同步上云。
+            if (_userModified) {
+                setSyncStatus('本地已修改，保留本地', 'warn');
+                return;
+            }
             if (d.tasks && typeof d.tasks === 'object') taskData = d.tasks;
             if (d.checkin && typeof d.checkin === 'object') checkinData = d.checkin;
             try {
@@ -7385,6 +7404,7 @@ async function loadFromCloud() {
             if (typeof updateCheckinStats === 'function') updateCheckinStats();
             if (typeof renderCountdown === 'function') renderCountdown();
         }
+        _userModified = false;
         setSyncStatus('云端已同步', 'ok');
     } catch (e) {
         console.warn('loadFromCloud failed:', e);
