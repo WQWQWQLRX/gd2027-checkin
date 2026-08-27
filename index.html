@@ -30,6 +30,7 @@
     </style>
     
     <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -158,6 +159,7 @@
                     <div class="flex items-center gap-4 text-sm">
                         <div class="text-gray-600">累计打卡 <span id="totalCheckin" class="font-semibold text-gray-800">0</span> 天</div>
                         <div class="text-gray-600">连续打卡 <span id="continuousCheckin" class="font-semibold text-gray-800">0</span> 天</div>
+<div id="syncStatus" class="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500" title="数据同步状态（Supabase）">本地模式（未同步）</div>
                         <div class="hidden sm:flex items-center gap-2">
                             <span class="text-gray-500">整体进度</span>
                             <div class="w-28 bg-gray-200 rounded-full h-2">
@@ -6635,6 +6637,7 @@
                 localStorage.setItem('gd2027_tasks', JSON.stringify(taskData));
                 localStorage.setItem('gd2027_checkin', JSON.stringify(checkinData));
             } catch(e) {}
+            if (typeof scheduleSync === 'function') scheduleSync();
         }
         function loadData() {
             try {
@@ -7317,5 +7320,80 @@
         // 页面加载完成后启动
         window.addEventListener('load', init);
     </script>
+
+<!-- ========== Supabase 云同步（云端为主 + 本地缓存） ========== -->
+<script>
+'use strict';
+/* 豆包版打卡网页 - Supabase 云同步模块
+   数据格式：云端 checkins 表 id=1 的 data jsonb 字段 = {"tasks": {...taskData}, "checkin": {...checkinData}}
+   策略：页面先读 localStorage 秒开渲染，再异步 loadFromCloud() 拉云端覆盖；任何保存走 saveToCloud()（防抖 300ms upsert）；失败静默降级本地。 */
+const SUPABASE_URL = 'https://xxclvxenjqjvmcawmwdd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4Y2x2ZXhuanFqdm1jYXdtd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1ODI5NzgsImV4cCI6MjEwMzE1ODk3OH0.rJUQ3ybLLT4tXhSjsAG7xaQS3b5GAFuezAtUnOHkJe4';
+const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let _syncTimer = null;
+
+function setSyncStatus(text, mode) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'text-xs px-2.5 py-1 rounded-full ' + (mode === 'ok' ? 'bg-green-50 text-green-600' : mode === 'sync' ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500');
+}
+
+function scheduleSync() {
+    if (!supabaseClient) return;
+    setSyncStatus('同步中…', 'sync');
+    if (_syncTimer) clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(saveToCloud, 300);
+}
+
+async function saveToCloud() {
+    if (!supabaseClient) return;
+    try {
+        const payload = { tasks: taskData, checkin: checkinData };
+        const { data, error } = await supabaseClient.from('checkins')
+            .update({ data: payload, updated_at: new Date().toISOString() })
+            .eq('id', 1).select();
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            const { error: insErr } = await supabaseClient.from('checkins')
+                .insert({ id: 1, data: payload });
+            if (insErr) throw insErr;
+        }
+        setSyncStatus('云端已同步', 'ok');
+    } catch (e) {
+        console.warn('saveToCloud failed:', e);
+        setSyncStatus('本地模式（未同步）', 'warn');
+    }
+}
+
+async function loadFromCloud() {
+    if (!supabaseClient) return;
+    try {
+        setSyncStatus('同步中…', 'sync');
+        const { data, error } = await supabaseClient.from('checkins')
+            .select('data').eq('id', 1).maybeSingle();
+        if (error) throw error;
+        if (data && data.data && typeof data.data === 'object') {
+            const d = data.data;
+            if (d.tasks && typeof d.tasks === 'object') taskData = d.tasks;
+            if (d.checkin && typeof d.checkin === 'object') checkinData = d.checkin;
+            try {
+                localStorage.setItem('gd2027_tasks', JSON.stringify(taskData));
+                localStorage.setItem('gd2027_checkin', JSON.stringify(checkinData));
+            } catch (e) {}
+            if (typeof renderAll === 'function') renderAll();
+            if (typeof updateCheckinStats === 'function') updateCheckinStats();
+            if (typeof renderCountdown === 'function') renderCountdown();
+        }
+        setSyncStatus('云端已同步', 'ok');
+    } catch (e) {
+        console.warn('loadFromCloud failed:', e);
+        setSyncStatus('本地模式（未同步）', 'warn');
+    }
+}
+
+/* 页面加载完成后异步拉取云端（本地已由原 init 秒开渲染，延迟 400ms 避免与骨架屏动画冲突） */
+window.addEventListener('load', function () { setTimeout(loadFromCloud, 400); });
+</script>
 </body>
 </html>
