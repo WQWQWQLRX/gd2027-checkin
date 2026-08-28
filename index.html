@@ -6659,14 +6659,17 @@
                 if (prev) {
                     ['morning', 'afternoon', 'evening'].forEach(p => {
                         const prevList = prev[p] || [];
-                        (seed[p] || []).forEach(t => {
-                            const o = prevList.find(x => x.id === t.id && x.name === t.name);
-                            if (o) t.done = o.done;
+                        // 内置任务：prev 中存在则对齐 done 状态；prev 中缺失（用户已删除）则从 seed 移除，避免"删除后刷新复活"
+                        const kept = (seed[p] || []).filter(t => {
+                            const o = prevList.find(x => x.id === t.id);
+                            if (o) { t.done = o.done; return true; }
+                            return false;
                         });
                         // 合并自定义任务：其 id 由 Date.now()+Math.random() 生成（数值远大于内置 id 1-11），
                         // 按 period 原样保留 id/name/module/type/done；内置任务 id 均在 seed 中，按 id 去重避免重复。
-                        const customs = prevList.filter(x => typeof x.id === 'number' && x.id > 1000 && !(seed[p] || []).some(y => y.id === x.id));
-                        if (customs.length) seed[p] = (seed[p] || []).concat(customs);
+                        const customs = prevList.filter(x => typeof x.id === 'number' && x.id > 1000 && !kept.some(y => y.id === x.id));
+                        if (customs.length) seed[p] = kept.concat(customs);
+                        else seed[p] = kept;
                     });
                 }
                 // 仅当内容实际变化时才写 localStorage 并触发云同步，避免浏览页面反复写盘/写云端（写放大 + 与 loadFromCloud 竞态）
@@ -7266,15 +7269,19 @@
 
                 let delayed = 0;
                 ['morning', 'afternoon', 'evening'].forEach(p => {
-                    tasks[p].forEach(t => {
+                    (tasks[p] || []).forEach(t => {
                         if (!t.done && t.module !== '休息') {
+                            // 明天已有同名 [顺延] 任务则跳过，避免重复点击导致任务无限堆积
+                            const exists = (taskData[ns][p] || []).some(x => x.name === t.name + ' [顺延]');
+                            if (exists) return;
                             taskData[ns][p].push({ ...t, id: Date.now() + Math.random(), name: t.name + ' [顺延]' });
                             delayed++;
                         }
                     });
                 });
                 saveData();
-                alert(`已将 ${delayed} 项未完成任务顺延至明天`);
+                if (delayed > 0) alert(`已将 ${delayed} 项未完成任务顺延至明天`);
+                else alert('明天已有相同顺延任务，未重复添加');
                 renderAll();
             };
 
@@ -7287,7 +7294,7 @@
             document.getElementById('makeupBtn').onclick = () => {
                 const ds = formatDate(currentDate);
                 const diff = (new Date() - new Date(ds + 'T00:00:00')) / (1000*60*60*24);
-                if (diff > 7) { alert('仅支持补卡近7天内的日期'); return; }
+                if (diff > 7 || diff < 0) { alert('仅支持补卡近7天内的日期'); return; }
                 checkinData[ds] = true;
                 saveData(); updateCheckinStats();
                 alert('补卡成功');
@@ -7344,6 +7351,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 let _syncTimer = null;
 let _userModified = false;
+let _cloudLoaded = false; // 首次云端加载完成前禁止上传，避免本地初始化数据覆盖云端勾选状态
 
 function setSyncStatus(text, mode) {
     const el = document.getElementById('syncStatus');
@@ -7354,6 +7362,7 @@ function setSyncStatus(text, mode) {
 
 function scheduleSync() {
     if (!supabaseClient) return;
+    if (!_cloudLoaded) return; // 首次云端加载完成前不上传，避免本地初始化数据覆盖云端勾选状态
     setSyncStatus('同步中…', 'sync');
     if (_syncTimer) clearTimeout(_syncTimer);
     _syncTimer = setTimeout(saveToCloud, 300);
@@ -7392,6 +7401,8 @@ async function loadFromCloud() {
             // 避免云端旧数据覆盖用户操作；本地数据稍后会经 saveToCloud 同步上云。
             if (_userModified) {
                 setSyncStatus('本地已修改，保留本地', 'warn');
+                _cloudLoaded = true;
+                scheduleSync(); // 放开上传，本地数据稍后覆盖云端
                 return;
             }
             if (d.tasks && typeof d.tasks === 'object') taskData = d.tasks;
@@ -7405,9 +7416,13 @@ async function loadFromCloud() {
             if (typeof renderCountdown === 'function') renderCountdown();
         }
         _userModified = false;
+        _cloudLoaded = true;
         setSyncStatus('云端已同步', 'ok');
+        // 首次加载完成后，将本地初始化生成的当天任务与云端合并结果统一上传，避免本地空数据先行覆盖云端
+        scheduleSync();
     } catch (e) {
         console.warn('loadFromCloud failed:', e);
+        _cloudLoaded = true; // 加载失败也放开上传，保证后续操作可同步（本地优先）
         setSyncStatus('本地模式（未同步）', 'warn');
     }
 }
