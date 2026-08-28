@@ -6603,7 +6603,7 @@
 };
 
         // ========== 状态 ==========
-        let currentDate = new Date('2026-08-27');
+        let currentDate = new Date();
         let selectedMonthDate = null;
         let currentTab = 'day';
         let showOptional = true;
@@ -7209,7 +7209,7 @@
 
             document.getElementById('prevDay').onclick = () => { currentDate.setDate(currentDate.getDate() - 1); renderDayPage(); };
             document.getElementById('nextDay').onclick = () => { currentDate.setDate(currentDate.getDate() + 1); renderDayPage(); };
-            document.getElementById('backToday').onclick = () => { currentDate = new Date('2026-08-27'); renderDayPage(); };
+            document.getElementById('backToday').onclick = () => { currentDate = new Date(); renderDayPage(); };
 
             document.getElementById('prevWeek').onclick = () => { currentDate.setDate(currentDate.getDate() - 7); renderWeekPage(); };
             document.getElementById('nextWeek').onclick = () => { currentDate.setDate(currentDate.getDate() + 7); renderWeekPage(); };
@@ -7315,7 +7315,7 @@
             updateCheckinStats();
             switchTab('day');
             initEvents();
-            selectedMonthDate = new Date('2026-08-27');
+            selectedMonthDate = new Date();
             // 初始化渲染可能触发首次 saveData（如首次生成某日期默认任务），此处统一重置用户修改标记，避免误跳云端覆盖
             if (typeof _userModified === 'boolean') _userModified = false;
 
