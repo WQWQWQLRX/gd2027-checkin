@@ -470,9 +470,9 @@
         // ========== 配置 ==========
         const EXAM_DATE = new Date('2026-12-06T00:00:00');
         const STAGES = [
-            { name: '系统基础期', start: '2026-08-27', end: '2026-10-18' },
-            { name: '强化刷题期', start: '2026-10-19', end: '2026-11-15' },
-            { name: '冲刺模考期', start: '2026-11-16', end: '2026-12-06' }
+            { name: '系统基础期', start: '2026-08-27T00:00:00', end: '2026-10-18T00:00:00' },
+            { name: '强化刷题期', start: '2026-10-19T00:00:00', end: '2026-11-15T00:00:00' },
+            { name: '冲刺模考期', start: '2026-11-16T00:00:00', end: '2026-12-06T00:00:00' }
         ];
         const MODULES = [
             { name: '资料分析', color: '#1e40af', key: '资料' },
@@ -6611,6 +6611,14 @@
         let checkinData = {};
 
         // ========== 工具函数 ==========
+        function escapeHtml(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
         function formatDate(d) {
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -6820,12 +6828,20 @@
             el.style.strokeDasharray = `${c} ${c}`;
             el.style.strokeDashoffset = c - (percent / 100) * c;
         }
+        function isCheckedIn(ds) {
+            const v = checkinData[ds];
+            return v === true || (v && typeof v === 'object' && (v.auto === true || v.manual === true));
+        }
+        function isManualCheckin(ds) {
+            const v = checkinData[ds];
+            return v && typeof v === 'object' && v.manual === true;
+        }
         function updateCheckinStats() {
-            const dates = Object.keys(checkinData).filter(d => checkinData[d]);
+            const dates = Object.keys(checkinData).filter(d => isCheckedIn(d));
             const total = dates.length;
             let continuous = 0;
             let today = new Date(); today.setHours(0,0,0,0);
-            while (checkinData[formatDate(today)]) { continuous++; today.setDate(today.getDate() - 1); }
+            while (isCheckedIn(formatDate(today))) { continuous++; today.setDate(today.getDate() - 1); }
             document.getElementById('totalCheckin').textContent = total;
             document.getElementById('continuousCheckin').textContent = continuous;
             document.getElementById('statTotal').textContent = total;
@@ -6833,7 +6849,21 @@
         }
         function checkTodayCheckin(ds) {
             const s = calcDayRate(ds);
-            if (s.done > 0 && s.rate >= 50) checkinData[ds] = true;
+            // 未来日期不产生打卡记录：仅保存任务状态，不写入 checkinData
+            const today = new Date(); today.setHours(0,0,0,0);
+            if (new Date(ds + 'T00:00:00') > today) {
+                saveData();
+                updateCheckinStats();
+                return;
+            }
+            // 手动补卡记录优先保留，不因自动打卡逻辑撤销
+            if (isManualCheckin(ds)) {
+                // 保留手动打卡
+            } else if (s.done > 0 && s.rate >= 50) {
+                checkinData[ds] = { auto: true };
+            } else {
+                delete checkinData[ds];
+            }
             saveData();
             updateCheckinStats();
         }
@@ -6854,12 +6884,18 @@
         function toggleTask(ds, period, index) {
             const tasks = getDayTasks(ds);
             tasks[period][index].done = !tasks[period][index].done;
-            saveData();
             renderAll();
+            // checkTodayCheckin 内部统一 saveData() 一次（任务状态 + 打卡数据），避免重复写盘
             checkTodayCheckin(ds);
         }
 
         // ========== 渲染 ==========
+        function calcTotalRate() {
+            const now = new Date();
+            const totalDays = (EXAM_DATE - new Date(STAGES[0].start)) / (1000*60*60*24);
+            const passedDays = (now - new Date(STAGES[0].start)) / (1000*60*60*24);
+            return Math.max(0, Math.min(100, Math.round(passedDays / totalDays * 100)));
+        }
         function renderCountdown() {
             const now = new Date();
             const diff = Math.ceil((EXAM_DATE - now) / (1000 * 60 * 60 * 24));
@@ -6869,9 +6905,7 @@
             const names = ['备考未开始', '系统基础期', '强化刷题期', '冲刺模考期', '已考试'];
             document.getElementById('currentStage').textContent = names[stage];
 
-            const totalDays = (EXAM_DATE - new Date(STAGES[0].start)) / (1000*60*60*24);
-            const passedDays = (now - new Date(STAGES[0].start)) / (1000*60*60*24);
-            const r = Math.max(0, Math.min(100, Math.round(passedDays / totalDays * 100)));
+            const r = calcTotalRate();
             document.getElementById('totalRate').textContent = r + '%';
             document.getElementById('totalProgressBar').style.width = r + '%';
         }
@@ -6906,7 +6940,7 @@
                     div.innerHTML = `
                         <input type="checkbox" class="day-task-checkbox" data-period="${period}" data-index="${i}" ${task.done ? 'checked' : ''}>
                         <span class="flex-1 text-sm ${task.done ? 'line-through text-gray-400' : ''}">
-                            ${task.name}
+                            ${escapeHtml(task.name)}
                             ${task.type === 'optional' ? '<span class="text-xs text-gray-400 ml-1">[选做]</span>' : ''}
                         </span>
                         <span class="text-xs text-gray-400">${task.module}</span>
@@ -6923,7 +6957,9 @@
                 btn.addEventListener('click', e => {
                     if (!confirm('确定删除该任务吗？')) return;
                     taskData[ds][e.target.dataset.period].splice(e.target.dataset.index, 1);
-                    saveData(); renderAll();
+                    // 删除任务后重算当天打卡：完成率跌破阈值时同步移除自动打卡（与 checkTodayCheckin 口径一致，内部统一 saveData）
+                    checkTodayCheckin(ds);
+                    renderAll();
                 });
             });
         }
@@ -6933,13 +6969,15 @@
             const day = d.getDay() || 7;
             const ws = new Date(d); ws.setDate(d.getDate() - day + 1); ws.setHours(0,0,0,0);
 
-            document.getElementById('weekTitle').textContent = `${ws.getMonth()+1}月${ws.getDate()}日 - ${ws.getMonth()+1}月${ws.getDate()+6}日`;
+            const we = new Date(ws); we.setDate(ws.getDate() + 6);
+            document.getElementById('weekTitle').textContent = `${ws.getMonth()+1}月${ws.getDate()}日 - ${we.getMonth()+1}月${we.getDate()}日`;
             
             const wr = calcWeekRate(ws);
+            const tr = calcTotalRate();
             document.getElementById('weekRate').textContent = wr + '%';
-            document.getElementById('weekTotalProgress').textContent = wr + '%';
-            document.getElementById('weekProgressNum').textContent = wr + '%';
-            document.getElementById('weekProgressBar').style.width = wr + '%';
+            document.getElementById('weekTotalProgress').textContent = tr + '%';
+            document.getElementById('weekProgressNum').textContent = tr + '%';
+            document.getElementById('weekProgressBar').style.width = tr + '%';
 
             const mb = document.getElementById('weekMiniBars');
             mb.innerHTML = '';
@@ -6974,7 +7012,7 @@
                         tHtml += `
                             <div class="flex items-center gap-2 py-1">
                                 <input type="checkbox" class="week-task-checkbox" data-date="${ds}" data-period="${period}" data-index="${idx}" ${t.done ? 'checked' : ''}>
-                                <span class="flex-1 text-xs ${t.done ? 'line-through text-gray-400' : ''}">${t.name.slice(0, 18)}${t.name.length>18?'...':''}</span>
+                                <span class="flex-1 text-xs ${t.done ? 'line-through text-gray-400' : ''}">${escapeHtml(t.name.slice(0, 18))}${t.name.length>18?'...':''}</span>
                             </div>
                         `;
                     });
@@ -7048,7 +7086,7 @@
                         list += `
                             <div class="flex items-center gap-2 py-0.5">
                                 <span class="w-1.5 h-1.5 rounded-full ${t.done ? 'bg-success-500' : 'bg-gray-300'}"></span>
-                                <span class="${t.done ? 'line-through text-gray-400' : ''}">${t.name.slice(0, 18)}${t.name.length>18?'...':''}</span>
+                                <span class="${t.done ? 'line-through text-gray-400' : ''}">${escapeHtml(t.name.slice(0, 18))}${t.name.length>18?'...':''}</span>
                             </div>
                         `;
                     });
@@ -7104,7 +7142,7 @@
                     tHtml += `
                         <div class="flex items-center gap-2 py-1.5">
                             <input type="checkbox" class="month-task-checkbox" data-period="${period}" data-index="${i}" ${t.done ? 'checked' : ''}>
-                            <span class="flex-1 ${t.done ? 'line-through text-gray-400' : ''}">${t.name}</span>
+                            <span class="flex-1 ${t.done ? 'line-through text-gray-400' : ''}">${escapeHtml(t.name)}</span>
                         </div>
                     `;
                 });
@@ -7255,7 +7293,9 @@
                     id: Date.now() + Math.random(),
                     name, module, type, done: false
                 });
-                saveData(); renderAll();
+                // 添加任务后重算当天打卡：新增未完成任务可能使完成率跌破阈值，同步移除自动打卡（内部统一 saveData）
+                checkTodayCheckin(ds);
+                renderAll();
                 modal.classList.add('hidden'); modal.classList.remove('flex');
                 document.getElementById('newTaskName').value = '';
             };
@@ -7279,7 +7319,8 @@
                         }
                     });
                 });
-                saveData();
+                // 顺延后重算明天打卡：新增未完成 [顺延] 任务可能使完成率跌破阈值，同步移除自动打卡（内部统一 saveData）
+                checkTodayCheckin(ns);
                 if (delayed > 0) alert(`已将 ${delayed} 项未完成任务顺延至明天`);
                 else alert('明天已有相同顺延任务，未重复添加');
                 renderAll();
@@ -7295,7 +7336,7 @@
                 const ds = formatDate(currentDate);
                 const diff = (new Date() - new Date(ds + 'T00:00:00')) / (1000*60*60*24);
                 if (diff > 7 || diff < 0) { alert('仅支持补卡近7天内的日期'); return; }
-                checkinData[ds] = true;
+                checkinData[ds] = { manual: true };
                 saveData(); updateCheckinStats();
                 alert('补卡成功');
             };
